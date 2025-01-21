@@ -1,6 +1,8 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Represents a single chess piece
@@ -65,6 +67,45 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        throw new RuntimeException("Not implemented");
+        List<ChessMove> validMoves = new ArrayList<>();
+
+        switch (type){
+            case KING:
+                addKingMove(board, myPosition, validMoves);
+                break;
+            case QUEEN:
+                addKingMove(board, myPosition, validMoves);
+                break;
+            case ROOK:
+                addKingMove(board, myPosition, validMoves);
+                break;
+            case BISHOP:
+                addKingMove(board, myPosition, validMoves);
+                break;
+            case KNIGHT:
+                addKingMove(board, myPosition, validMoves);
+                break;
+            case PAWN:
+                addKingMove(board, myPosition, validMoves);
+                break;
+
+        }
+        return validMoves;
+    }
+    private void addKingMove(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves){
+        int[] deltas = {1, 0, 1};
+        for (int rowDelta : deltas){
+            for (int colDelta : deltas){
+                if (rowDelta == 0 && colDelta == 0) continue;
+                ChessPosition newPosition = new ChessPosition(myPosition.getRow() + rowDelta, myPosition.getColumn() + colDelta);
+                if ((myPosition.getRow() + rowDelta >= 1 || myPosition.getRow() + rowDelta <= 8) && (myPosition.getColumn() + colDelta >= 1 || myPosition.getColumn() + colDelta <= 8)){
+                    ChessPiece pieceAtNewPosition = board.getPiece(newPosition);
+                    if (pieceAtNewPosition == null || pieceAtNewPosition.getTeamColor() != this.color){
+                        validMoves.add(new ChessMove(myPosition, newPosition, null));
+                    }
+
+                }
+            }
+        }
     }
 }
