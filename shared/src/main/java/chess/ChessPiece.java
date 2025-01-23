@@ -19,23 +19,6 @@ public class ChessPiece {
     this.type = type;
     }
 
-//    @Override
-//    public int hashCode() {
-//        return super.hashCode();
-//    }
-//
-//    @Override
-//    public boolean equals(Object obj) {
-//        boolean result = super.equals(obj);
-//        if (result) {
-//            ChessPiece j = (ChessPiece) obj;
-//            return (this.color == j.color && this.type == j.type);
-//        } else {
-//            return false;
-//        }
-//    }
-
-
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -102,7 +85,7 @@ public class ChessPiece {
                 addRookMove(board, myPosition, validMoves);
                 break;
             case BISHOP:
-                addKingMove(board, myPosition, validMoves);
+                addBishopMove(board, myPosition, validMoves);
                 break;
             case KNIGHT:
                 addKingMove(board, myPosition, validMoves);
@@ -142,6 +125,14 @@ public class ChessPiece {
         }
         for (int colDelta : colDeltas){
             addMovesInDirection(board, myPosition, validMoves, 0, colDelta);
+        }
+    }
+    private void addBishopMove(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves){
+        int[] deltas = {-1, 1};
+        for (int rowDelta : deltas){
+            for (int colDelta : deltas){
+                addMovesInDirection(board, myPosition, validMoves, rowDelta, colDelta);
+            }
         }
     }
     private void addMovesInDirection(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves, int rowDelta, int colDelta){
