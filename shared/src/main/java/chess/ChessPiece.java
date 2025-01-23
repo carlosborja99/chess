@@ -79,7 +79,8 @@ public class ChessPiece {
                 addKingMove(board, myPosition, validMoves);
                 break;
             case QUEEN:
-                addKingMove(board, myPosition, validMoves);
+                addRookMove(board, myPosition, validMoves);
+                addBishopMove(board, myPosition, validMoves);
                 break;
             case ROOK:
                 addRookMove(board, myPosition, validMoves);
