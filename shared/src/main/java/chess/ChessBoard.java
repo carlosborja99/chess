@@ -2,6 +2,7 @@ package chess;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A chessboard that can hold and rearrange chess pieces.
@@ -15,14 +16,19 @@ public class ChessBoard {
         board = new HashMap<>();
     }
 
+
     @Override
-    public int hashCode() {
-        return board.hashCode();
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChessBoard that = (ChessBoard) o;
+        return Objects.equals(board, that.board);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return super.equals(obj);
+    public int hashCode() {
+        return Objects.hashCode(board);
     }
 
     @Override
@@ -56,6 +62,27 @@ public class ChessBoard {
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        throw new RuntimeException("Not implemented");
+        //Board should look like the start of a chess game, use addPiece()
+        startingPieces(ChessGame.TeamColor.WHITE, 1, 2);
+        startingPieces(ChessGame.TeamColor.BLACK, 8, 7);
+    }
+    /**
+     * Sets the starting pieces in the board game
+     * @param side is for the team color
+     * @param nonPawns defines the row where the ranked pieces will go
+     * @param pawns is the row where the pawns will go
+     */
+    public void startingPieces(ChessGame.TeamColor side, int  nonPawns, int pawns) {
+        addPiece(new ChessPosition(nonPawns, 1), new ChessPiece(side, ChessPiece.PieceType.ROOK));
+        addPiece(new ChessPosition(nonPawns, 2), new ChessPiece(side, ChessPiece.PieceType.KNIGHT));
+        addPiece(new ChessPosition(nonPawns, 3), new ChessPiece(side, ChessPiece.PieceType.BISHOP));
+        addPiece(new ChessPosition(nonPawns, 4), new ChessPiece(side, ChessPiece.PieceType.QUEEN));
+        addPiece(new ChessPosition(nonPawns, 5), new ChessPiece(side, ChessPiece.PieceType.KING));
+        addPiece(new ChessPosition(nonPawns, 6), new ChessPiece(side, ChessPiece.PieceType.BISHOP));
+        addPiece(new ChessPosition(nonPawns, 7), new ChessPiece(side, ChessPiece.PieceType.KNIGHT));
+        addPiece(new ChessPosition(nonPawns, 8), new ChessPiece(side, ChessPiece.PieceType.ROOK));
+        for(int i = 1; i <= 8; i++){
+            addPiece(new ChessPosition(pawns, i), new ChessPiece(side, ChessPiece.PieceType.PAWN));
+        }
     }
 }
