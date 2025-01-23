@@ -89,7 +89,7 @@ public class ChessPiece {
                 addBishopMove(board, myPosition, validMoves);
                 break;
             case KNIGHT:
-                addKingMove(board, myPosition, validMoves);
+                addKnightMove(board, myPosition, validMoves);
                 break;
             case PAWN:
                 addKingMove(board, myPosition, validMoves);
@@ -133,6 +133,18 @@ public class ChessPiece {
         for (int rowDelta : deltas){
             for (int colDelta : deltas){
                 addMovesInDirection(board, myPosition, validMoves, rowDelta, colDelta);
+            }
+        }
+    }
+    private void addKnightMove(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves) {
+        int[][] knightMoves = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {1, -2}, {-1, 2}, {-1, -2}};
+        for (int[] movement : knightMoves) {
+            ChessPosition newPosition = new ChessPosition(myPosition.getRow() + movement[0], myPosition.getColumn() + movement[1]);
+            if(isValidPosition(newPosition)){
+                ChessPiece pieceAtNewPosition = board.getPiece(newPosition);
+                if (pieceAtNewPosition == null || pieceAtNewPosition.getTeamColor() != this.color){
+                    validMoves.add(new ChessMove(myPosition, newPosition, null));
+                }
             }
         }
     }
