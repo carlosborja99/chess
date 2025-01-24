@@ -92,7 +92,7 @@ public class ChessPiece {
                 addKnightMove(board, myPosition, validMoves);
                 break;
             case PAWN:
-                addKingMove(board, myPosition, validMoves);
+                addPawnMove(board, myPosition, validMoves);
                 break;
 
         }
@@ -144,6 +144,30 @@ public class ChessPiece {
                 ChessPiece pieceAtNewPosition = board.getPiece(newPosition);
                 if (pieceAtNewPosition == null || pieceAtNewPosition.getTeamColor() != this.color){
                     validMoves.add(new ChessMove(myPosition, newPosition, null));
+                }
+            }
+        }
+    }
+    private void addPawnMove(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves) {
+        int direction = (this.color == ChessGame.TeamColor.BLACK) ? -1 : 1;
+        ChessPosition normalMovement = new ChessPosition(myPosition.getRow() + direction, myPosition.getColumn());
+        if(isValidPosition(normalMovement) && board.getPiece(normalMovement) == null){
+            validMoves.add(new ChessMove(myPosition, normalMovement, null));
+        }
+        if((this.color == ChessGame.TeamColor.BLACK && myPosition.getRow() == 7) || (this.color == ChessGame.TeamColor.WHITE && myPosition.getRow() == 2)){
+            ChessPosition firstMovement = new ChessPosition(myPosition.getRow() + 2 * direction, myPosition.getColumn());
+            if (board.getPiece(firstMovement) == null){
+                validMoves.add(new ChessMove(myPosition, firstMovement, null));
+            }
+        }
+
+        int[] captureDeltas = {-1, 1};
+        for (int delta : captureDeltas) {
+            ChessPosition capturePosition = new ChessPosition(myPosition.getRow() + direction, myPosition.getColumn() + delta);
+            if (isValidPosition(capturePosition)) {
+                ChessPiece pieceAtNewPosition = board.getPiece(capturePosition);
+                if (pieceAtNewPosition != null && pieceAtNewPosition.getTeamColor() != this.color){
+                    validMoves.add(new ChessMove(myPosition, capturePosition, null));
                 }
             }
         }
