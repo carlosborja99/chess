@@ -152,7 +152,13 @@ public class ChessPiece {
         int direction = (this.color == ChessGame.TeamColor.BLACK) ? -1 : 1;
         ChessPosition normalMovement = new ChessPosition(myPosition.getRow() + direction, myPosition.getColumn());
         if(isValidPosition(normalMovement) && board.getPiece(normalMovement) == null){
-            validMoves.add(new ChessMove(myPosition, normalMovement, null));
+            if (normalMovement.getRow() == (this.color == ChessGame.TeamColor.WHITE ? 8 : 1)){
+                validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.QUEEN));
+                validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.BISHOP));
+                validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.ROOK));
+                validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.KNIGHT));
+            }
+            else{validMoves.add(new ChessMove(myPosition, normalMovement, null));}
         }
         if((this.color == ChessGame.TeamColor.BLACK && myPosition.getRow() == 7) || (this.color == ChessGame.TeamColor.WHITE && myPosition.getRow() == 2)){
             ChessPosition firstMovement = new ChessPosition(myPosition.getRow() + 2 * direction, myPosition.getColumn());
@@ -167,13 +173,16 @@ public class ChessPiece {
             if (isValidPosition(capturePosition)) {
                 ChessPiece pieceAtNewPosition = board.getPiece(capturePosition);
                 if (pieceAtNewPosition != null && pieceAtNewPosition.getTeamColor() != this.color){
-                    validMoves.add(new ChessMove(myPosition, capturePosition, null));
+                    if (normalMovement.getRow() == (this.color == ChessGame.TeamColor.WHITE ? 8 : 1)){
+                        validMoves.add(new ChessMove(myPosition, capturePosition, PieceType.QUEEN));
+                        validMoves.add(new ChessMove(myPosition, capturePosition, PieceType.BISHOP));
+                        validMoves.add(new ChessMove(myPosition, capturePosition, PieceType.ROOK));
+                        validMoves.add(new ChessMove(myPosition, capturePosition, PieceType.KNIGHT));
+                    }else{validMoves.add(new ChessMove(myPosition, capturePosition, null));}
                 }
             }
         }
-        if (normalMovement.getRow() == (this.color == ChessGame.TeamColor.WHITE ? 8 : 1)){
-            validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.QUEEN));
-        }
+
     }
     private void addMovesInDirection(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves, int rowDelta, int colDelta){
         for (int i = 1; i <= 8; i++){

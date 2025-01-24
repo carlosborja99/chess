@@ -55,8 +55,13 @@ public class ChessMove {
         return startPosition.equals(movimiento.startPosition) && endPosition.equals(movimiento.endPosition) && (promotionPiece == null ? movimiento.promotionPiece == null : promotionPiece.equals(movimiento.promotionPiece));
     }
 
+
     @Override
     public String toString() {
-        return super.toString();
+        return "ChessMove{" +
+                "startPosition=" + startPosition +
+                ", endPosition=" + endPosition +
+                ", promotionPiece=" + promotionPiece +
+                '}';
     }
 }

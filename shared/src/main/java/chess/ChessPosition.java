@@ -45,8 +45,16 @@ public class ChessPosition {
         return row == check.row && col == check.col;
     }
 
+//    @Override
+//    public String toString() {
+//        return super.toString();
+//    }
+
     @Override
     public String toString() {
-        return super.toString();
+        return "ChessPosition{" +
+                "row=" + row +
+                ", col=" + col +
+                '}';
     }
 }
