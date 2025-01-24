@@ -156,7 +156,7 @@ public class ChessPiece {
         }
         if((this.color == ChessGame.TeamColor.BLACK && myPosition.getRow() == 7) || (this.color == ChessGame.TeamColor.WHITE && myPosition.getRow() == 2)){
             ChessPosition firstMovement = new ChessPosition(myPosition.getRow() + 2 * direction, myPosition.getColumn());
-            if (board.getPiece(firstMovement) == null){
+            if (board.getPiece(firstMovement) == null && board.getPiece(normalMovement) == null){
                 validMoves.add(new ChessMove(myPosition, firstMovement, null));
             }
         }
@@ -170,6 +170,9 @@ public class ChessPiece {
                     validMoves.add(new ChessMove(myPosition, capturePosition, null));
                 }
             }
+        }
+        if (normalMovement.getRow() == (this.color == ChessGame.TeamColor.WHITE ? 8 : 1)){
+            validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.QUEEN));
         }
     }
     private void addMovesInDirection(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves, int rowDelta, int colDelta){
