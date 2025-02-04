@@ -55,9 +55,15 @@ public class ChessGame {
         Collection<ChessMove> canMove = piece.pieceMoves(board, startPosition);
         Collection<ChessMove> realMoves = new ArrayList<>();
         for(ChessMove movement : canMove){
-            if(kingCheck(movement) == false){
+            ChessPosition endPos = movement.getEndPosition();
+            ChessPiece captured = board.getPiece(endPos);
+            board.addPiece(startPosition, null);
+            board.addPiece(endPos, piece);
+            if(!isInCheck(piece.getTeamColor())){
                 realMoves.add(movement);
             }
+            board.addPiece(startPosition, piece);
+            board.addPiece(endPos, captured);
         }
         return realMoves;
     }
@@ -88,6 +94,7 @@ public class ChessGame {
             board.addPiece(end, reverseInCaseOfCheck);
             throw new InvalidMoveException("Move results in Check");
         }
+        //Remove if it fails
         turnTeam = (turnTeam == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
     }
 
