@@ -68,6 +68,13 @@ public class ChessBoard {
         startingPieces(ChessGame.TeamColor.BLACK, 8, 7);
     }
     /**
+     * Retrieves the data in the board, this is necessary since some of the methods require knowledge of where the elements of the map are like knowing where the King is and the position of other pieces to calculate Checkmate and
+     * (How the game of chess is in the current turn)
+     */
+    public Map<ChessPosition, ChessPiece> getBoard() {
+        return board;
+    }
+    /**
      * Sets the starting pieces in the board game
      * @param side is for the team color
      * @param nonPawns defines the row where the ranked pieces will go
