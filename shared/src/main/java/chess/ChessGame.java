@@ -2,6 +2,7 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * For a class that can manage a chess game, making moves on a board
@@ -90,7 +91,22 @@ public class ChessGame {
      */
     public boolean isInCheck(TeamColor teamColor) {
         ChessPosition whereIsTheKing = null;
-        for(ChessPosition where : board.getBoard)
+        TeamColor opponentTeam = (teamColor == TeamColor.BLACK) ? TeamColor.WHITE : TeamColor.BLACK;
+        for(Map.Entry<ChessPosition, ChessPiece> entry : board.getBoard().entrySet()){
+            ChessPiece piece = entry.getValue();
+            if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == teamColor){
+                whereIsTheKing = entry.getKey();
+                break;
+            }
+        }
+        for(Map.Entry<ChessPosition, ChessPiece> entry : board.getBoard().entrySet()){
+            ChessPiece piece = entry.getValue();
+            if (piece != null && piece.getTeamColor() == opponentTeam){
+                for (ChessMove movement : piece.pieceMoves(board, entry.getKey())){
+                    if (movement.getEndPosition().equals(whereIsTheKing)) return true;
+                }
+            }
+        }
         return false;
     }
 
