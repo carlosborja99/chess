@@ -72,15 +72,23 @@ public class ChessGame {
         ChessPosition start = move.getStartPosition();
         ChessPosition end = move.getEndPosition();
         ChessPiece piece = board.getPiece(start);
+        if (piece == null) throw new InvalidMoveException("There is no piece at the starting position");
         if(!piece.getTeamColor().equals(turnTeam)){
-            throw new InvalidMoveException("Its not your turn");
+            throw new InvalidMoveException("It's not your turn");
         }
         Collection<ChessMove> validMoves = validMoves(start);
         if(!validMoves.contains(move)){
             throw new InvalidMoveException("This is an invalid move");
         }
+        ChessPiece reverseInCaseOfCheck = board.getPiece(end);
+        board.addPiece(end, piece);
+        board.addPiece(start, null);
+        if(isInCheck(turnTeam)){
+            board.addPiece(start, piece);
+            board.addPiece(end, reverseInCaseOfCheck);
+            throw new InvalidMoveException("Move results in Check");
+        }
         turnTeam = (turnTeam == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
-
     }
 
     /**
