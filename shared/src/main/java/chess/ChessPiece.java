@@ -166,7 +166,6 @@ public class ChessPiece {
                 validMoves.add(new ChessMove(myPosition, firstMovement, null));
             }
         }
-
         int[] captureDeltas = {-1, 1};
         for (int delta : captureDeltas) {
             ChessPosition capturePosition = new ChessPosition(myPosition.getRow() + direction, myPosition.getColumn() + delta);

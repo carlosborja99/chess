@@ -11,11 +11,10 @@ import java.util.Objects;
  * signature of the existing methods.
  */
 public class ChessBoard {
-    private Map<ChessPosition, ChessPiece> board;
+    final private Map<ChessPosition, ChessPiece> board;
     public ChessBoard() {
         board = new HashMap<>();
     }
-
 
     @Override
     public boolean equals(Object o) {
@@ -33,7 +32,9 @@ public class ChessBoard {
 
     @Override
     public String toString() {
-        return super.toString();
+        return "ChessBoard{" +
+                "board=" + board +
+                '}';
     }
 
     /**
