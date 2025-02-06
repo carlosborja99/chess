@@ -15,6 +15,7 @@ public class ChessGame {
     private TeamColor turnTeam;
     public ChessGame() {
         this.board = new ChessBoard();
+        this.board.resetBoard();
         this.turnTeam = TeamColor.WHITE;
     }
 
@@ -78,13 +79,13 @@ public class ChessGame {
         ChessPosition start = move.getStartPosition();
         ChessPosition end = move.getEndPosition();
         ChessPiece piece = board.getPiece(start);
-        if (piece == null) throw new InvalidMoveException("There is no piece at the starting position");
+        if (piece == null) throw new InvalidMoveException("No piece at the starting position");
         if(!piece.getTeamColor().equals(turnTeam)){
             throw new InvalidMoveException("It's not your turn");
         }
         Collection<ChessMove> validMoves = validMoves(start);
         if(!validMoves.contains(move)){
-            throw new InvalidMoveException("This is an invalid move");
+            throw new InvalidMoveException("Invalid move");
         }
         ChessPiece reverseInCaseOfCheck = board.getPiece(end);
         board.addPiece(end, piece);
@@ -110,14 +111,14 @@ public class ChessGame {
     public boolean isInCheck(TeamColor teamColor) {
         ChessPosition whereIsTheKing = null;
         TeamColor opponentTeam = (teamColor == TeamColor.BLACK) ? TeamColor.WHITE : TeamColor.BLACK;
-        for(Map.Entry<ChessPosition, ChessPiece> entry : board.getBoard().entrySet()){
+        for(Map.Entry<ChessPosition, ChessPiece> entry : new ArrayList<>(board.getBoard().entrySet())){
             ChessPiece piece = entry.getValue();
             if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == teamColor){
                 whereIsTheKing = entry.getKey();
                 break;
             }
         }
-        for(Map.Entry<ChessPosition, ChessPiece> entry : board.getBoard().entrySet()){
+        for(Map.Entry<ChessPosition, ChessPiece> entry : new ArrayList<>(board.getBoard().entrySet())){
             ChessPiece piece = entry.getValue();
             if (piece != null && piece.getTeamColor() == opponentTeam){
                 for (ChessMove movement : piece.pieceMoves(board, entry.getKey())){
@@ -135,11 +136,10 @@ public class ChessGame {
      * @return True if the specified team is in checkmate
      */
     public boolean isInCheckmate(TeamColor teamColor) {
-
         if(!isInCheck(teamColor)){
             return false;
         }
-        for(Map.Entry<ChessPosition, ChessPiece> entry : board.getBoard().entrySet()){
+        for(Map.Entry<ChessPosition, ChessPiece> entry : new ArrayList<>(board.getBoard().entrySet())){
             ChessPiece piece = entry.getValue();
             ChessPosition inTheStart = entry.getKey();
             if(piece != null && piece.getTeamColor() == teamColor){
@@ -173,7 +173,7 @@ public class ChessGame {
         if (isInCheck(teamColor)){
             return false;
         }
-        for(Map.Entry<ChessPosition, ChessPiece> entry : board.getBoard().entrySet()){
+        for(Map.Entry<ChessPosition, ChessPiece> entry : new ArrayList<>(board.getBoard().entrySet())){
             ChessPiece piece = entry.getValue();
             ChessPosition inTheStart = entry.getKey();
             if(piece != null && piece.getTeamColor() == teamColor){
