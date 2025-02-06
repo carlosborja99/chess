@@ -89,12 +89,15 @@ public class ChessGame {
         ChessPiece reverseInCaseOfCheck = board.getPiece(end);
         board.addPiece(end, piece);
         board.addPiece(start, null);
+        if(piece.getPieceType() == ChessPiece.PieceType.PAWN && (end.getRow() == 1 || end.getRow() == 8)){
+            board.addPiece(end, new ChessPiece(piece.getTeamColor(), move.getPromotionPiece()));
+        }
+
         if(isInCheck(turnTeam)){
             board.addPiece(start, piece);
             board.addPiece(end, reverseInCaseOfCheck);
             throw new InvalidMoveException("Move results in Check");
         }
-        //Remove if it fails
         turnTeam = (turnTeam == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
     }
 
