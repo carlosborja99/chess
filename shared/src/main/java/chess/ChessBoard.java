@@ -59,6 +59,23 @@ public class ChessBoard {
     }
 
     /**
+     * Removes a piece from the board due to the way that addPiece adds pieces to the board
+     *
+     * @param position The position to remove piece from
+     */
+    public void removePiece(ChessPosition position) {
+        board.remove(position);
+    }
+
+    /**
+     * Removes null values from the b
+     *
+     *
+     */
+    public void clearEmptySpace(){
+        board.entrySet().removeIf(entry ->entry.getValue() == null);
+    }
+    /**
      * Sets the board to the default starting board
      * (How the game of chess normally starts)
      */

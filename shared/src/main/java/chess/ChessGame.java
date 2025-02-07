@@ -79,6 +79,7 @@ public class ChessGame {
         ChessPosition start = move.getStartPosition();
         ChessPosition end = move.getEndPosition();
         ChessPiece piece = board.getPiece(start);
+
         if (piece == null) throw new InvalidMoveException("No piece at the starting position");
         if(!piece.getTeamColor().equals(turnTeam)){
             throw new InvalidMoveException("It's not your turn");
@@ -89,7 +90,7 @@ public class ChessGame {
         }
         ChessPiece reverseInCaseOfCheck = board.getPiece(end);
         board.addPiece(end, piece);
-        board.addPiece(start, null);
+        board.removePiece(start);
         if(piece.getPieceType() == ChessPiece.PieceType.PAWN && (end.getRow() == 1 || end.getRow() == 8)){
             board.addPiece(end, new ChessPiece(piece.getTeamColor(), move.getPromotionPiece()));
         }
@@ -99,6 +100,7 @@ public class ChessGame {
             board.addPiece(end, reverseInCaseOfCheck);
             throw new InvalidMoveException("Move results in Check");
         }
+        board.clearEmptySpace();
         turnTeam = (turnTeam == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
     }
 

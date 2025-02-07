@@ -35,7 +35,10 @@ public class ChessPiece {
 
     @Override
     public String toString() {
-        return super.toString();
+        return "ChessPiece{" +
+                "color=" + color +
+                ", type=" + type +
+                '}';
     }
 
     /**
