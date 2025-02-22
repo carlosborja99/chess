@@ -1,15 +1,16 @@
 package dataaccess;
 
-import model.SharedModule;
-
+import model.AuthData;
+import model.GameData;
+import model.UserData;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AccessDataInMemory {
-    private Map<String, SharedModule.UserData> users = new HashMap<>();
-    private Map<String, SharedModule.GameData> games = new HashMap<>();
-    private Map<String, SharedModule.AuthData> authTokens = new HashMap<>();
+public class AccessDataInMemory extends DataAccess {
+    private final Map<String, UserData> users = new HashMap<>();
+    private final Map<String, GameData> games = new HashMap<>();
+    private final Map<String, AuthData> authTokens = new HashMap<>();
 
     @Override
     public void clear(){
@@ -18,40 +19,40 @@ public class AccessDataInMemory {
         authTokens.clear();
     }
     @Override
-    public void createUser(SharedModule.UserData user){
+    public void createUser(UserData user) throws DataAccessException{
         users.put(user.username(), user);
     }
     @Override
-    public SharedModule.UserData getUser(String username){
+    public UserData getUser(String username) throws DataAccessException{
         return users.get(username);
     }
 
     @Override
-    public void createGame(SharedModule.GameData newGame){
+    public void createGame(GameData newGame) throws DataAccessException{
         games.put(String.valueOf(newGame.gameID()), newGame);
     }
     @Override
-    public SharedModule.GameData getGame(int gameID){
+    public GameData getGame(int gameID) throws DataAccessException{
         return games.get(gameID);
     }
     @Override
-    public ArrayList<SharedModule.GameData> listOfGames(){
+    public ArrayList<GameData> listOfGames() throws DataAccessException{
         return new ArrayList<>(games.values());
     }
     @Override
-    public void updateGame(SharedModule.GameData game){
+    public void updateGame(GameData game)  throws DataAccessException{
         games.put(String.valueOf(game.gameID()), game);
     }
     @Override
-    public void createAuthorization(SharedModule.AuthData a){
+    public void createAuthorization(AuthData a) throws DataAccessException{
         authTokens.put(a.authToken(), a);
     }
     @Override
-    public SharedModule.AuthData getAuthorization(String authToken){
+    public AuthData getAuthorization(String authToken) throws DataAccessException{
         return authTokens.get(authToken);
     }
     @Override
-    void deleteAuthorization(String authToken){
+    public void deleteAuthorization(String authToken) throws DataAccessException{
         authTokens.remove(authToken);
     }
 }

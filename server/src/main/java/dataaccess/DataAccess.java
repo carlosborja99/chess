@@ -1,18 +1,20 @@
 package dataaccess;
 
-import model.SharedModule;
+import model.AuthData;
+import model.GameData;
+import model.UserData;
 
 import java.util.ArrayList;
 
-public class DataAccess {
-    void clear() throws DataAccessException;
-    void createUser(SharedModule.UserData user) throws DataAccessException;
-    SharedModule.UserData getUser(String username) throws DataAccessException;
-    void createGame(SharedModule.GameData game) throws DataAccessException;
-    SharedModule.GameData getGame(int gameID) throws DataAccessException;
-    ArrayList<SharedModule.GameData> listOfGames() throws  DataAccessException;
-    void updateGame(SharedModule.GameData game) throws DataAccessException;
-    void createAuthorization(SharedModule.AuthData a) throws DataAccessException;
-    SharedModule.AuthData getAuthorization(String authToken) throws DataAccessException;
-    void deleteAuthorization(String authToken) throws DataAccessException;
+public abstract class DataAccess {
+    public abstract void clear() throws DataAccessException;
+    public abstract void createUser(UserData user) throws DataAccessException;
+    public abstract UserData getUser(String username) throws DataAccessException;
+    public abstract void createGame(GameData game) throws DataAccessException;
+    public abstract GameData getGame(int gameID) throws DataAccessException;
+    public abstract ArrayList<GameData> listOfGames() throws  DataAccessException;
+    public abstract void updateGame(GameData game) throws DataAccessException;
+    public abstract void createAuthorization(AuthData a) throws DataAccessException;
+    public abstract AuthData getAuthorization(String authToken) throws DataAccessException;
+    public abstract void deleteAuthorization(String authToken) throws DataAccessException;
 }
