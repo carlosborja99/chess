@@ -94,8 +94,8 @@ public class Server {
     private Object createGame(Request request, Response response) {
         try{
             String authToken = request.headers("Authorization");
-            GameService.createGameRequest gameRequest = gson.fromJson(request.body(), GameService.createGameRequest.class);
-            GameService.createGameResult gameResult = gameService.createGame(new GameService.createGameRequest(authToken, gameRequest.gameName()));
+            GameService.CreateGameRequest gameRequest = gson.fromJson(request.body(), GameService.CreateGameRequest.class);
+            GameService.CreateGameResult gameResult = gameService.createGame(new GameService.CreateGameRequest(authToken, gameRequest.gameName()));
             response.status(200);
             return gson.toJson(gameResult);
         }catch(DataAccessException e){
