@@ -131,7 +131,7 @@ public class Server {
                     e.getMessage().equals("User already exists") ? 403 : 400, e.getMessage());
         }
     }
-
+// Clears the data
     private Object clear(Request request, Response response) {
         try {
             gameService.clear();

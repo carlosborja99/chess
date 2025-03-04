@@ -4,9 +4,9 @@ import model.*;
 import java.util.*;
 
 public class AccessDataInMemory implements DataAccess {
-    private Map<String, UserData> users = new HashMap<>();
-    private Map<Integer, GameData> games = new HashMap<>();
-    private Map<String, AuthData> authTokens = new HashMap<>();
+    private final Map<String, UserData> users = new HashMap<>();
+    private final Map<Integer, GameData> games = new HashMap<>();
+    private final Map<String, AuthData> authTokens = new HashMap<>();
     private int nextGameId = 1;
 
     @Override
@@ -37,7 +37,6 @@ public class AccessDataInMemory implements DataAccess {
     @Override
     public void createGame(GameData newGame) throws DataAccessException{
         games.put(newGame.gameID(), newGame);
-        nextGameId++;
     }
     @Override
     public GameData getGame(int gameID) throws DataAccessException{
