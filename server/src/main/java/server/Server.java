@@ -66,7 +66,7 @@ public class Server {
             response.status(200);
             return "{}";
         }catch(DataAccessException e){
-            return errorResponse(response,e.getMessage().equals("Unauthorized") ? 401 : 500, e.getMessage());
+            return errorResponse(response,401, e.getMessage());
         }
     }
 
