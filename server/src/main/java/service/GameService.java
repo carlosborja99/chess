@@ -2,6 +2,8 @@ package service;
 import chess.ChessGame;
 import dataaccess.*;
 import model.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class GameService {
@@ -64,4 +66,13 @@ public class GameService {
     }
     public record ListGamesRequest(String authToken){}
     public record ListGamesResult(List<GameData> games){}
+
+    public ListGamesResult listGames(ListGamesRequest request) throws DataAccessException{
+        AuthData authorized = dataAccess.getAuthorization(request.authToken());
+        if(authorized == null){
+            throw new DataAccessException("Unauthorized");
+        }
+        List<GameData> games = dataAccess.listOfGames();
+        return new ListGamesResult(games);
+    }
 }
