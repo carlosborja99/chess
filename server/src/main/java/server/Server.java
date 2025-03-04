@@ -1,6 +1,8 @@
 package server;
+import chess.ChessGame;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.util.Map;
 import dataaccess.*;
 import service.*;
 import spark.*;
@@ -31,11 +33,45 @@ public class Server {
         Spark.delete("/session", this::logout);
         Spark.post("/game", this::createGame);
         Spark.exception(DataAccessException.class, this::exceptionHandler);
+        Spark.put("/game", this::joinGame);
+//        Spark.get("/game", this::listGames);
+
         //This line initializes the server and can be removed once you have a functioning endpoint
 //        Spark.init();
 
         Spark.awaitInitialization();
         return Spark.port();
+    }
+
+//    private Object listGames(Request request, Response response) {
+//        try{
+//            String auth = request.headers("Authorization");
+//            GameService.ListGamesResult
+//            response.status(200);
+//            return gson.toJson(joinResult);
+//        }
+//    }
+
+    private Object joinGame(Request request, Response response) {
+        try{
+            String auth = request.headers("Authorization");
+            GameService.JoinRequest joinRequest = gson.fromJson(request.body(), GameService.JoinRequest.class);
+            GameService.JoinRequest updatedJoinRequest = new GameService.JoinRequest(
+              auth, joinRequest.teamColor(), joinRequest.gameID()
+            );
+
+            GameService.JoinResult joinResult = gameService.joinGame(updatedJoinRequest);
+            response.status(200);
+            return gson.toJson(joinResult);
+        }catch(DataAccessException e){
+            return errorResponse(response, switch (e.getMessage()) {
+                case "Bad Request" -> 400;
+                case "Unauthorized" -> 401;
+                case "Already taken" -> 403;
+                case "Game not found" -> 404;
+                default -> 500;
+            }, e.getMessage());
+        }
     }
 
     private void exceptionHandler(DataAccessException e, Request request, Response response) {

@@ -15,4 +15,5 @@ public interface DataAccess {
     void createAuthorization(AuthData auth) throws DataAccessException;
     AuthData getAuthorization(String authToken) throws DataAccessException;
     void deleteAuthorization(String authToken) throws DataAccessException;
+
 }

@@ -2,6 +2,7 @@ package service;
 import chess.ChessGame;
 import dataaccess.*;
 import model.*;
+import java.util.List;
 
 public class GameService {
     private final DataAccess dataAccess;
@@ -27,29 +28,40 @@ public class GameService {
         dataAccess.createGame(game);
         return new createGameResult(gameID);
     }
-    public void joinGame(String authToken, int gameID, String playerColor) throws DataAccessException{
-        AuthData auth = dataAccess.getAuthorization(authToken);
+
+    public record JoinRequest(String authToken, ChessGame.TeamColor teamColor, int gameID){}
+    public record JoinResult(){}
+    public JoinResult joinGame(JoinRequest request) throws DataAccessException{
+        AuthData auth = dataAccess.getAuthorization(request.authToken());
         if(auth == null){
             throw new DataAccessException("Unauthorized");
         }
-        GameData game = dataAccess.getGame(gameID);
+        if (request.gameID() <= 0){
+            throw new DataAccessException("Bad Request");
+        }
+        GameData game = dataAccess.getGame(request.gameID());
         if(game == null){
             throw new DataAccessException("Game not found");
         }
+        String username = auth.username();
 
-        if("WHITE".equals(playerColor) && game.whiteUsername() != null){
-            throw new DataAccessException("White color is already taken");
+        if(request.teamColor() == ChessGame.TeamColor.WHITE && game.whiteUsername() != null){
+            throw new DataAccessException("Already taken");
         }
-        if("BLACK".equals(playerColor) && game.whiteUsername() != null){
-            throw new DataAccessException("Black color is already taken");
+        if(request.teamColor() == ChessGame.TeamColor.BLACK && game.blackUsername() != null){
+            throw new DataAccessException("Already taken");
         }
-        if("WHITE".equals(playerColor)){
-            game = new GameData(game.gameID(), authToken, game.blackUsername(), game.gameName(), game.game());
-        }else if ("BLACK".equals(playerColor)){
-            game = new GameData(game.gameID(), game.whiteUsername(), authToken, game.gameName(), game.game());
-        }else{
+        GameData game2;
+        if (request.teamColor() == ChessGame.TeamColor.WHITE){
+            game2 = new GameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game());
+        }else if (request.teamColor() == ChessGame.TeamColor.BLACK){
+            game2 = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());
+        }else {
             throw new DataAccessException("Bad Request");
         }
-        dataAccess.updateGame(game);
+        dataAccess.updateGame(game2);
+        return new JoinResult();
     }
+    public record ListGamesRequest(String authToken){}
+    public record ListGamesResult(List<GameData> games){}
 }
