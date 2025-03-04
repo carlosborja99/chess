@@ -49,10 +49,11 @@ public class AccessDataInMemory implements DataAccess {
     }
     @Override
     public void updateGame(GameData game)  throws DataAccessException{
-        if (!games.containsKey(game.gameID())){
+        if (games.containsKey(game.gameID())){
+            games.put(game.gameID(), game);
+        } else {
             throw new DataAccessException("Game not found");
         }
-        games.put(game.gameID(), game);
     }
     @Override
     public void createAuthorization(AuthData auth) throws DataAccessException{

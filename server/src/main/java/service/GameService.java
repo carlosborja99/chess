@@ -31,15 +31,15 @@ public class GameService {
         return new createGameResult(gameID);
     }
 
-    public record JoinRequest(String authToken, ChessGame.TeamColor teamColor, int gameID){}
+    public record JoinRequest(String authToken, String playerColor, int gameID){}
     public record JoinResult(){}
     public JoinResult joinGame(JoinRequest request) throws DataAccessException{
+        if (request.gameID() <= 0){
+            throw new DataAccessException("Bad Request");
+        }
         AuthData auth = dataAccess.getAuthorization(request.authToken());
         if(auth == null){
             throw new DataAccessException("Unauthorized");
-        }
-        if (request.gameID() <= 0){
-            throw new DataAccessException("Bad Request");
         }
         GameData game = dataAccess.getGame(request.gameID());
         if(game == null){
@@ -47,23 +47,56 @@ public class GameService {
         }
         String username = auth.username();
 
-        if(request.teamColor() == ChessGame.TeamColor.WHITE && game.whiteUsername() != null){
-            throw new DataAccessException("Already taken");
+        if (request.playerColor() == null || request.playerColor().isEmpty()){
+            throw new DataAccessException("Bad Request");
         }
-        if(request.teamColor() == ChessGame.TeamColor.BLACK && game.blackUsername() != null){
-            throw new DataAccessException("Already taken");
+        ChessGame.TeamColor teamColor;
+        try{
+            teamColor = ChessGame.TeamColor.valueOf(request.playerColor().toUpperCase());
+        }catch (IllegalArgumentException e){
+            throw new DataAccessException("Bad Request");
         }
         GameData game2;
-        if (request.teamColor() == ChessGame.TeamColor.WHITE){
+        if(teamColor == ChessGame.TeamColor.WHITE){
+            if(game.whiteUsername() != null){
+                throw new DataAccessException("Already taken");
+            }
             game2 = new GameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game());
-        }else if (request.teamColor() == ChessGame.TeamColor.BLACK){
+        } else if(teamColor == ChessGame.TeamColor.BLACK){
+            if(game.blackUsername() != null){
+                throw new DataAccessException("Already taken");
+            }
             game2 = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());
-        }else {
+        }else{
             throw new DataAccessException("Bad Request");
         }
         dataAccess.updateGame(game2);
         return new JoinResult();
     }
+
+    private static GameData getGameData(JoinRequest request, GameData game, String username) throws DataAccessException {
+        GameData game2;
+        ChessGame.TeamColor teamColor;
+        try{
+            teamColor = ChessGame.TeamColor.valueOf(request.playerColor().toUpperCase());
+        }catch (IllegalArgumentException e){
+            throw new DataAccessException("Bad Request");
+        }        if(teamColor == ChessGame.TeamColor.WHITE){
+            if(game.whiteUsername() != null){
+                throw new DataAccessException("Already taken");
+            }
+            game2 = new GameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game());
+        } else if(teamColor == ChessGame.TeamColor.BLACK){
+            if(game.blackUsername() != null){
+                throw new DataAccessException("Already taken");
+            }
+            game2 = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());
+        }else{
+            throw new DataAccessException("Bad Request");
+        }
+        return game2;
+    }
+
     public record ListGamesRequest(String authToken){}
     public record ListGamesResult(List<GameData> games){}
 

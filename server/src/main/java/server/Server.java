@@ -1,8 +1,5 @@
 package server;
-import chess.ChessGame;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import java.util.Map;
 import dataaccess.*;
 import service.*;
 import spark.*;
@@ -62,7 +59,7 @@ public class Server {
             String auth = request.headers("Authorization");
             GameService.JoinRequest joinRequest = gson.fromJson(request.body(), GameService.JoinRequest.class);
             GameService.JoinRequest updatedJoinRequest = new GameService.JoinRequest(
-              auth, joinRequest.teamColor(), joinRequest.gameID()
+              auth, joinRequest.playerColor(), joinRequest.gameID()
             );
 
             GameService.JoinResult joinResult = gameService.joinGame(updatedJoinRequest);
