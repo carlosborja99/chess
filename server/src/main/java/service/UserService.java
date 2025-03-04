@@ -28,7 +28,7 @@ public class UserService {
 
     public LoginResponse login(LoginRequest request) throws DataAccessException {
         UserData user = dataAccess.getUser(request.username());
-        if(!user.password().equals(request.password()) || user == null){
+        if(user == null || !user.password().equals(request.password())){
             throw new DataAccessException("Error: unauthorized");
         }
         String authToken = generateToken();
