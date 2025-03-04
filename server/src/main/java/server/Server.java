@@ -88,11 +88,8 @@ public class Server {
             response.status(200);
             return gson.toJson(registerResponse);
         } catch (DataAccessException e) {
-            return errorResponse(response, switch(e.getMessage()) {
-                case "Bad request" -> 400;
-                case "User already exists" -> 403;
-                default -> 500;
-            }, e.getMessage());
+            return errorResponse(response,
+                    e.getMessage().equals("User already exists") ? 403 : 400, e.getMessage());
         }
     }
 
