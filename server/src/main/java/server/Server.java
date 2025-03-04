@@ -53,6 +53,7 @@ public class Server {
         }catch(DataAccessException e){
             return errorResponse(response, switch(e.getMessage()) {
                 case "Bad request" -> 400;
+                case "Unauthorized" -> 401;
                 case "User already exists" -> 403;
                 default -> 500;
             }, e.getMessage());

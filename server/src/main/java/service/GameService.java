@@ -18,8 +18,8 @@ public class GameService {
     public createGameResult createGame(createGameRequest request) throws DataAccessException{
         AuthData auth = dataAccess.getAuthorization(request.authToken());
         if(auth == null){
-            throw new DataAccessException("Auth token not found");
-        }if (request.gameName == null){
+            throw new DataAccessException("Unauthorized");
+        }if (request.gameName() == null){
             throw new DataAccessException("Bad Request");
         }
         int gameID = Integer.parseInt(request.gameName);
@@ -30,7 +30,7 @@ public class GameService {
     public void joinGame(String authToken, int gameID, String playerColor) throws DataAccessException{
         AuthData auth = dataAccess.getAuthorization(authToken);
         if(auth == null){
-            throw new DataAccessException("Auth token not found");
+            throw new DataAccessException("Unauthorized");
         }
         GameData game = dataAccess.getGame(gameID);
         if(game == null){
@@ -45,8 +45,10 @@ public class GameService {
         }
         if("WHITE".equals(playerColor)){
             game = new GameData(game.gameID(), authToken, game.blackUsername(), game.gameName(), game.game());
-        }else{
+        }else if ("BLACK".equals(playerColor)){
             game = new GameData(game.gameID(), game.whiteUsername(), authToken, game.gameName(), game.game());
+        }else{
+            throw new DataAccessException("Bad Request");
         }
         dataAccess.updateGame(game);
     }
