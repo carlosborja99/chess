@@ -1,9 +1,9 @@
 package server;
+
 import com.google.gson.Gson;
 import dataaccess.*;
 import service.*;
 import spark.*;
-
 
 public class Server {
     private final UserService userService;
@@ -29,15 +29,29 @@ public class Server {
         Spark.post("/session", this::login);
         Spark.delete("/session", this::logout);
         Spark.post("/game", this::createGame);
-        Spark.exception(DataAccessException.class, this::exceptionHandler);
         Spark.put("/game", this::joinGame);
         Spark.get("/game", this::listGames);
 
-        //This line initializes the server and can be removed once you have a functioning endpoint
-//        Spark.init();
+        Spark.exception(DataAccessException.class, this::exceptionHandler);
 
         Spark.awaitInitialization();
         return Spark.port();
+    }
+
+    public void stop() {
+        Spark.stop();
+        Spark.awaitStop();
+    }
+
+
+    private Object clear(Request request, Response response) {
+        try {
+            gameService.clear();
+            response.status(200);
+            return "{}";
+        } catch (DataAccessException e) {
+            return errorResponse(response, 500, e.getMessage());
+        }
     }
 
     private Object listGames(Request request, Response response) {
@@ -76,10 +90,6 @@ public class Server {
         }
     }
 
-    private void exceptionHandler(DataAccessException e, Request request, Response response) {
-        response.status(500);
-        response.body(gson.toJson(new ErrorResponse("Error: " + e.getMessage())));
-    }
 
     private Object createGame(Request request, Response response) {
         try{
@@ -131,24 +141,16 @@ public class Server {
                     e.getMessage().equals("User already exists") ? 403 : 400, e.getMessage());
         }
     }
-// Clears the data
-    private Object clear(Request request, Response response) {
-        try {
-            gameService.clear();
-            response.status(200);
-            return "{}";
-        } catch (DataAccessException e) {
-            return errorResponse(response, 500, e.getMessage());
-        }
+
+    private void exceptionHandler(DataAccessException e, Request request, Response response) {
+        response.status(500);
+        response.body(gson.toJson(new ErrorResponse("Error: " + e.getMessage())));
     }
 
     private Object errorResponse(Response response, int status, String message) {
         response.status(status);
         return gson.toJson(new ErrorResponse("Error: " + message));
     }
-    record  ErrorResponse (String message) {}
-    public void stop() {
-        Spark.stop();
-        Spark.awaitStop();
-    }
+    record ErrorResponse (String message) {}
+
 }
