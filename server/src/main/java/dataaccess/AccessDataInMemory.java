@@ -7,15 +7,21 @@ public class AccessDataInMemory implements DataAccess {
     private Map<String, UserData> users = new HashMap<>();
     private Map<Integer, GameData> games = new HashMap<>();
     private Map<String, AuthData> authTokens = new HashMap<>();
-    private int nextGameId = 0;
+    private int nextGameId = 1;
 
     @Override
     public void clear()throws DataAccessException{
         users.clear();
         games.clear();
         authTokens.clear();
-        nextGameId = 0;
+        nextGameId = 1;
     }
+
+    @Override
+    public int createGameID() throws DataAccessException {
+        return nextGameId++;
+    }
+
     @Override
     public void createUser(UserData user) throws DataAccessException {
         if (users.containsKey(user.username())){

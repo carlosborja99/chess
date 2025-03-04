@@ -19,10 +19,10 @@ public class GameService {
         AuthData auth = dataAccess.getAuthorization(request.authToken());
         if(auth == null){
             throw new DataAccessException("Unauthorized");
-        }if (request.gameName() == null){
+        }if (request.gameName() == null || request.gameName().isEmpty()){
             throw new DataAccessException("Bad Request");
         }
-        int gameID = Integer.parseInt(request.gameName);
+        int gameID = dataAccess.createGameID();
         GameData game = new GameData(gameID, null, null, request.gameName(), new ChessGame());
         dataAccess.createGame(game);
         return new createGameResult(gameID);

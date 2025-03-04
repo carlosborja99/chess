@@ -5,6 +5,7 @@ import model.*;
 
 public interface DataAccess {
     void clear() throws DataAccessException;
+    int createGameID() throws DataAccessException;
     void createUser(UserData user) throws DataAccessException;
     UserData getUser(String username) throws DataAccessException;
     void createGame(GameData game) throws DataAccessException;
