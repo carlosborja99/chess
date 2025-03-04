@@ -1,6 +1,6 @@
 package service;
-import dataaccess.DataAccess;
-import dataaccess.DataAccessException;
+import dataaccess.*;
+
 import model.UserData;
 import model.AuthData;
 import java.util.UUID;
@@ -10,31 +10,38 @@ public class UserService {
     public UserService(DataAccess dataAccess) {
         this.dataAccess = dataAccess;
     }
+    public record RegisterRequest(String username, String password, String email) {}
+    public record RegisterResponse(String authToken, String username) {}
 
-    public AuthData register(String username, String password, String email) throws DataAccessException {
-        UserData user = new UserData(username, password, email);
+    public RegisterResponse register(RegisterRequest request) throws DataAccessException {
+        if (request.username() == null || request.password() == null || request.email() == null) {
+            throw new DataAccessException("This is a bad request");
+        }
+        UserData user = new UserData(request.username, request.password, request.email);
         dataAccess.createUser(user);
         String authToken = generateToken();
-        AuthData authData = new AuthData(authToken, username);
-        dataAccess.createAuthorization(authData);
-        return authData;
+        dataAccess.createAuthorization(new AuthData(authToken, request.username()));
+        return new RegisterResponse(authToken, request.username());
     }
-    public AuthData login(String username, String password) throws DataAccessException {
-        UserData user = dataAccess.getUser(username);
-        if(!user.password().equals(password) || user == null){
+    public record LoginRequest(String username, String password) {}
+    public record LoginResponse(String username, String authToken) {}
+
+    public LoginResponse login(LoginRequest request) throws DataAccessException {
+        UserData user = dataAccess.getUser(request.username());
+        if(!user.password().equals(request.password()) || user == null){
             throw new DataAccessException("Error: unauthorized");
         }
         String authToken = generateToken();
-        AuthData authData = new AuthData(authToken, username);
-        dataAccess.createAuthorization(authData);
-        return authData;
+        dataAccess.createAuthorization(new AuthData(authToken, request.username()));
+        return new LoginResponse(request.username(), authToken);
     }
-    public void logout(String authToken) throws DataAccessException{
-        AuthData authData = dataAccess.getAuthorization(authToken);
-        if(authData == null){
+    public record LogoutRequest(String authToken) {}
+    public void logout(LogoutRequest request) throws DataAccessException{
+        AuthData authorized = dataAccess.getAuthorization(request.authToken());
+        if(authorized == null){
             throw new DataAccessException("Error: unauthorized");
         }
-        dataAccess.deleteAuthorization(authToken);
+        dataAccess.deleteAuthorization(request.authToken());
     }
     public static String generateToken() {
         return UUID.randomUUID().toString();

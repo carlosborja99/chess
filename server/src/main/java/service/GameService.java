@@ -1,10 +1,7 @@
 package service;
 import chess.ChessGame;
-import dataaccess.DataAccess;
-import dataaccess.DataAccessException;
-import model.GameData;
-
-import java.util.Random;
+import dataaccess.*;
+import model.*;
 
 public class GameService {
     private final DataAccess dataAccess;
@@ -12,19 +9,39 @@ public class GameService {
     public GameService(DataAccess dataAccess) {
         this.dataAccess = dataAccess;
     }
-    public int createGame(String gameName) throws DataAccessException{
-        GameData game = new GameData(new Random().nextInt(10000), null, null, gameName, new ChessGame());
+    public void clear() throws DataAccessException {
+        dataAccess.clear();
+    }
+    public record createGameRequest(String authToken, String gameName){}
+    public record createGameResult(int gameID){}
+
+    public createGameResult createGame(createGameRequest request) throws DataAccessException{
+        AuthData auth = dataAccess.getAuthorization(request.authToken());
+        if(auth == null){
+            throw new DataAccessException("Auth token not found");
+        }if (request.gameName == null){
+            throw new DataAccessException("Bad Request");
+        }
+        int gameID = Integer.parseInt(request.gameName);
+        GameData game = new GameData(gameID, null, null, request.gameName(), new ChessGame());
         dataAccess.createGame(game);
-        return game.gameID();
+        return new createGameResult(gameID);
     }
     public void joinGame(String authToken, int gameID, String playerColor) throws DataAccessException{
-        dataAccess.getAuthorization(authToken);
+        AuthData auth = dataAccess.getAuthorization(authToken);
+        if(auth == null){
+            throw new DataAccessException("Auth token not found");
+        }
         GameData game = dataAccess.getGame(gameID);
+        if(game == null){
+            throw new DataAccessException("Game not found");
+        }
+
         if("WHITE".equals(playerColor) && game.whiteUsername() != null){
-            throw new DataAccessException("Color is already taken");
+            throw new DataAccessException("White color is already taken");
         }
         if("BLACK".equals(playerColor) && game.whiteUsername() != null){
-            throw new DataAccessException("Color is already taken");
+            throw new DataAccessException("Black color is already taken");
         }
         if("WHITE".equals(playerColor)){
             game = new GameData(game.gameID(), authToken, game.blackUsername(), game.gameName(), game.game());

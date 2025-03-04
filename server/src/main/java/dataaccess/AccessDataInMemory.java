@@ -1,25 +1,26 @@
 package dataaccess;
 
-import model.AuthData;
-import model.GameData;
-import model.UserData;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import model.*;
+import java.util.*;
 
-public class AccessDataInMemory extends DataAccess {
-    private final Map<String, UserData> users = new HashMap<>();
-    private final Map<String, GameData> games = new HashMap<>();
-    private final Map<String, AuthData> authTokens = new HashMap<>();
+public class AccessDataInMemory implements DataAccess {
+    private Map<String, UserData> users = new HashMap<>();
+    private Map<Integer, GameData> games = new HashMap<>();
+    private Map<String, AuthData> authTokens = new HashMap<>();
+    private int nextGameId = 0;
 
     @Override
-    public void clear(){
+    public void clear()throws DataAccessException{
         users.clear();
         games.clear();
         authTokens.clear();
+        nextGameId = 0;
     }
     @Override
-    public void createUser(UserData user) throws DataAccessException{
+    public void createUser(UserData user) throws DataAccessException {
+        if (users.containsKey(user.username())){
+            throw new DataAccessException("User already exists");
+        }
         users.put(user.username(), user);
     }
     @Override
@@ -29,7 +30,8 @@ public class AccessDataInMemory extends DataAccess {
 
     @Override
     public void createGame(GameData newGame) throws DataAccessException{
-        games.put(String.valueOf(newGame.gameID()), newGame);
+        games.put(newGame.gameID(), newGame);
+        nextGameId++;
     }
     @Override
     public GameData getGame(int gameID) throws DataAccessException{
@@ -41,11 +43,14 @@ public class AccessDataInMemory extends DataAccess {
     }
     @Override
     public void updateGame(GameData game)  throws DataAccessException{
-        games.put(String.valueOf(game.gameID()), game);
+        if (!games.containsKey(game.gameID())){
+            throw new DataAccessException("Game not found");
+        }
+        games.put(game.gameID(), game);
     }
     @Override
-    public void createAuthorization(AuthData a) throws DataAccessException{
-        authTokens.put(a.authToken(), a);
+    public void createAuthorization(AuthData auth) throws DataAccessException{
+        authTokens.put(auth.authToken(), auth);
     }
     @Override
     public AuthData getAuthorization(String authToken) throws DataAccessException{
@@ -53,6 +58,9 @@ public class AccessDataInMemory extends DataAccess {
     }
     @Override
     public void deleteAuthorization(String authToken) throws DataAccessException{
+        if (!authTokens.containsKey(authToken)){
+            throw new DataAccessException("Authorization token not found");
+        }
         authTokens.remove(authToken);
     }
 }
