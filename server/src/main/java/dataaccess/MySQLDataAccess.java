@@ -58,6 +58,13 @@ public class MySQLDataAccess implements DataAccess {
         }
     }
 
+    private void setStringToNull(PreparedStatement ps, int index, String value) throws SQLException {
+        if (value == null) {
+            ps.setNull(index, Types.VARCHAR);
+        } else {
+            ps.setString(index, value);
+        }
+    }
     @Override
     public void clear() throws DataAccessException {
         String[] tables = { "games", "users", "authorization_data" };
@@ -107,12 +114,40 @@ public class MySQLDataAccess implements DataAccess {
 
     @Override
     public UserData getUser(String username) throws DataAccessException {
+        String sql = "SELECT username, password, email FROM users WHERE username = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (var rs = ps.executeQuery(sql)) {
+                if(rs.next()){
+                    return new UserData(
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            rs.getString("email")
+                            );
+                }
+            }
+        }catch(SQLException e){
+            throw new DataAccessException("Unable to create user: " + e.getMessage());
+        }
         return null;
     }
 
     @Override
     public void createGame(GameData game) throws DataAccessException {
-
+        String sql = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, gameState) VALUES (?, ?, ?, ?, ?)";
+        String gameJson = gson.toJson(game.game());
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)){
+            ps.setInt(1, game.gameID());
+            setStringToNull(ps, 2, game.whiteUsername());
+            setStringToNull(ps, 3, game.blackUsername());
+            ps.setString(4, game.gameName());
+            ps.setString(5, gameJson);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to create game: " + e.getMessage());
+        }
     }
 
     @Override
