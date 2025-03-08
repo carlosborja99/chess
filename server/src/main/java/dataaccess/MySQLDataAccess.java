@@ -221,16 +221,49 @@ public class MySQLDataAccess implements DataAccess {
 
     @Override
     public void createAuthorization(AuthData auth) throws DataAccessException {
-
-    8}
+        String sql = "INSERT INTO authorization_data (authToken, username) VALUES (?, ?)";
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)){
+            ps.setString(1, auth.authToken());
+            ps.setString(2, auth.username());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to create authorization: " + e.getMessage());
+        }
+    }
 
     @Override
     public AuthData getAuthorization(String authToken) throws DataAccessException {
+        String sql = "SELECT authToken, USERNAME FROM authorization_data WHERE authToken = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)){
+            ps.setString(1, authToken);
+            try (var rs = ps.executeQuery()) {
+                if(rs.next()){
+                    return new AuthData(
+                            rs.getString("authToken"),
+                            rs.getString("username")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to get authorization: " + e.getMessage());
+        }
         return null;
     }
 
     @Override
     public void deleteAuthorization(String authToken) throws DataAccessException {
-
+        String sql = "DELETE FROM authorization_data WHERE authToken = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)) {
+            ps.setString(1, authToken);
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new DataAccessException("Authorization token not found");
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to delete authorization: " + e.getMessage());
+        }
     }
 }
