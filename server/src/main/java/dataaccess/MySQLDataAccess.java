@@ -1,5 +1,6 @@
 package dataaccess;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import model.AuthData;
@@ -7,6 +8,7 @@ import model.GameData;
 import model.UserData;
 import org.mindrot.jbcrypt.BCrypt;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MySQLDataAccess implements DataAccess {
@@ -152,23 +154,75 @@ public class MySQLDataAccess implements DataAccess {
 
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
+        String sql = "SELECT * FROM games WHERE gameID = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)){
+            ps.setInt(1, gameID);
+            try (var rs = ps.executeQuery()) {
+                if(rs.next()){
+                    ChessGame game = gson.fromJson(rs.getString("gameState"), ChessGame.class);
+                    return new GameData(
+                            rs.getInt("gameID"),
+                            rs.getString("whiteUsername"),
+                            rs.getString("blackUsername"),
+                            rs.getString("gameName"),
+                            game
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to get game: " + e.getMessage());
+        }
         return null;
     }
 
     @Override
     public List<GameData> listOfGames() throws DataAccessException {
-        return List.of();
+        List<GameData> gameList = new ArrayList<>();
+        String sql = "SELECT * FROM games";
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql);
+             var rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ChessGame game = gson.fromJson(rs.getString("gameState"), ChessGame.class);
+                gameList.add(new GameData(
+                        rs.getInt("gameID"),
+                        rs.getString("whiteUsername"),
+                        rs.getString("blackUsername"),
+                        rs.getString("gameName"),
+                        game
+                ));
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to list games: " + e.getMessage());
+        }
+        return gameList;
     }
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
-
+        String sql = "UPDATE games SET whiteUsername = ?, blackUsername = ?, gameName = ?, gameState = ? WHERE gameID = ?";
+        String gameJson = gson.toJson(game.game());
+        try (var conn = DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)){
+            setStringToNull(ps, 1, game.whiteUsername());
+            setStringToNull(ps, 2, game.blackUsername());
+            ps.setString(3, game.gameName());
+            ps.setString(4, gameJson);
+            ps.setInt(5, game.gameID());
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) {
+                throw new DataAccessException("Game not found");
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Unable to update game: " + e.getMessage());
+        }
     }
 
     @Override
     public void createAuthorization(AuthData auth) throws DataAccessException {
 
-    }
+    8}
 
     @Override
     public AuthData getAuthorization(String authToken) throws DataAccessException {
