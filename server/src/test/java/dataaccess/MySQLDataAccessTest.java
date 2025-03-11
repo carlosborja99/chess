@@ -154,9 +154,14 @@ class MySQLDataAccessTest {
 
     @Test
     void deleteAuthorizationSuccess() throws DataAccessException {
+        AuthData authData = new AuthData("token", "user");
+        dataAccess.createAuthorization(authData);
+        dataAccess.deleteAuthorization("token");
+        assertNull(dataAccess.getAuthorization("token"));
     }
 
     @Test
     void deleteNonexistentAuthorizationFailure() throws DataAccessException {
+        assertThrows(DataAccessException.class, () -> dataAccess.deleteAuthorization("nonexistent"));
     }
 }
