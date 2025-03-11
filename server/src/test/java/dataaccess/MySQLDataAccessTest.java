@@ -140,10 +140,16 @@ class MySQLDataAccessTest {
 
     @Test
     void getAuthorizationSuccess() throws DataAccessException {
+        AuthData authData = new AuthData("token", "user");
+        dataAccess.createAuthorization(authData);
+        AuthData authData2 = dataAccess.getAuthorization("token");
+        assertNotNull(authData2);
+        assertEquals("user", authData2.username());
     }
 
     @Test
     void getNonExistentAuthorizationFailure() throws DataAccessException {
+        assertNull(dataAccess.getAuthorization("nonexistent"));
     }
 
     @Test
