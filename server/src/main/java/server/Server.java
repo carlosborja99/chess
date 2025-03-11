@@ -10,8 +10,14 @@ public class Server {
     private final GameService gameService;
     private final Gson gson;
 
-    public Server() {
-        DataAccess dataAccess = new AccessDataInMemory();
+    public Server() throws DataAccessException {
+//        DataAccess dataAccess = new AccessDataInMemory();
+        DataAccess dataAccess;
+        try{
+            dataAccess = new MySQLDataAccess();
+        } catch (DataAccessException e) {
+            throw new DataAccessException(e.getMessage());
+        }
         this.userService = new UserService(dataAccess);
         this.gameService = new GameService(dataAccess);
         this.gson = new Gson();
