@@ -1,6 +1,7 @@
 package dataaccess;
 
 import chess.ChessGame;
+import model.AuthData;
 import model.GameData;
 import model.UserData;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,20 +109,33 @@ class MySQLDataAccessTest {
     void updateGameSuccess() throws DataAccessException {
         GameData game = new GameData(1, null, null, "testGame", new ChessGame());
         dataAccess.createGame(game);
-        GameData game2 = new GameData(1, "white", null, "UpdateGame", new ChessGame());
-        dataAccess.updateGame(game);
+        GameData game2 = new GameData(1, "white", null, "updateGame", new ChessGame());
+        dataAccess.updateGame(game2);
+        GameData game3 = dataAccess.getGame(1);
+        assertEquals("white", game3.whiteUsername());
+        assertEquals("updateGame", game3.gameName());
     }
 
     @Test
     void updateNonexistentGameFailure() throws DataAccessException {
+        GameData game = new GameData(999, null, null, "testGame", new ChessGame());
+        assertThrows(DataAccessException.class, () -> dataAccess.updateGame(game));
     }
 
     @Test
     void createAuthorizationSuccess() throws DataAccessException {
+        AuthData authData = new AuthData("token", "user");
+        dataAccess.createAuthorization(authData);
+        AuthData authData2 = dataAccess.getAuthorization("token");
+        assertNotNull(authData2);
+        assertEquals("user", authData2.username());
     }
 
     @Test
     void createDuplicateAuthorizationFailure() throws DataAccessException {
+        AuthData authData = new AuthData("token", "user");
+        dataAccess.createAuthorization(authData);
+        assertThrows(DataAccessException.class, () -> dataAccess.createAuthorization(authData));
     }
 
     @Test
