@@ -29,8 +29,8 @@ public class MySQLDataAccess implements DataAccess {
                 blackUsername VARCHAR (255),
                 gameName VARCHAR (255) NOT NULL,
                 game TEXT NOT NULL,
-                FOREIGN KEY (whiteUsername) REFERENCES user (username),
-                FOREIGN KEY (blackUsername) REFERENCES user (username)
+                FOREIGN KEY (whiteUsername) REFERENCES users (username),
+                FOREIGN KEY (blackUsername) REFERENCES users (username)
             )
             """,
             """
@@ -83,10 +83,11 @@ public class MySQLDataAccess implements DataAccess {
 
     @Override
     public int createGameID() throws DataAccessException {
-        String sql = "INSERT INTO games (gameName) VALUES (?)";
+        String sql = "INSERT INTO games (gameName, game) VALUES (?, ?)";
         try (var conn = DatabaseManager.getConnection();
             var ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             ps.setString(1, "New Game");
+            ps.setString(2, gson.toJson(new ChessGame()));
             ps.executeUpdate();
             try (var rs = ps.getGeneratedKeys()){
                 if (rs.next()) {
