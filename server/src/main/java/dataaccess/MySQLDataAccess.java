@@ -43,11 +43,8 @@ public class MySQLDataAccess implements DataAccess {
     };
 
 
-    public MySQLDataAccess() throws DataAccessException {
-        configureDatabase();
-    }
 
-    private void configureDatabase()  throws DataAccessException {
+    public void configureDatabase()  throws DataAccessException {
         DatabaseManager.createDatabase();
         try (var conn = DatabaseManager.getConnection()) {
             for (String statement : SQLStatement) {

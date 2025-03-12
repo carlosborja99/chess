@@ -10,17 +10,18 @@ public class Server {
     private final GameService gameService;
     private final Gson gson;
 
-    public Server() throws DataAccessException {
+    public Server() {
 //        DataAccess dataAccess = new AccessDataInMemory();
-        DataAccess dataAccess;
+        MySQLDataAccess dataAccess = new MySQLDataAccess();
         try{
-            dataAccess = new MySQLDataAccess();
+            dataAccess.configureDatabase();
         } catch (DataAccessException e) {
-            throw new DataAccessException(e.getMessage());
+            System.out.println(e.getMessage());
         }
         this.userService = new UserService(dataAccess);
         this.gameService = new GameService(dataAccess);
         this.gson = new Gson();
+        //
     }
 
     public int run(int desiredPort) {
