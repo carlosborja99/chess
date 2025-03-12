@@ -14,6 +14,11 @@ class MySQLDataAccessTest {
     @BeforeEach
     void setUp() throws DataAccessException {
         dataAccess = new MySQLDataAccess();
+        try {
+            dataAccess.configureDatabase();
+        } catch (DataAccessException e) {
+
+        }
         dataAccess.clear();
     }
 
