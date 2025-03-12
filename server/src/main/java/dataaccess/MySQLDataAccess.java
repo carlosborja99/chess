@@ -37,7 +37,7 @@ public class MySQLDataAccess implements DataAccess {
             CREATE TABLE IF NOT EXISTS authorization_data (
                 authToken VARCHAR (255) NOT NULL PRIMARY KEY,
                 username VARCHAR (255) NOT NULL,
-                FOREIGN KEY (username) REFERENCES user (username)
+                FOREIGN KEY (username) REFERENCES users (username)
             )
             """
     };
@@ -66,10 +66,10 @@ public class MySQLDataAccess implements DataAccess {
     }
     @Override
     public void clear() throws DataAccessException {
-        String[] tables = { "games", "users", "authorization_data" };
+        String[] tables = {"games", "authorization_data", "users"};
         try (var conn = DatabaseManager.getConnection()){
             for (String table : tables) {
-                try (var ps = conn.prepareStatement("TRUNCATE TABLE " + table)){
+                try (var ps = conn.prepareStatement("DELETE FROM " + table)){
                     ps.executeUpdate();
                 }
             }

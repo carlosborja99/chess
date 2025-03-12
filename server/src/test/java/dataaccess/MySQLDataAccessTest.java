@@ -26,7 +26,7 @@ class MySQLDataAccessTest {
     void clearSuccess() throws DataAccessException {
         dataAccess.createUser(new UserData("test", "password", "test@email.com"));
         dataAccess.clear();
-        assertNull(dataAccess.getUser("user"));
+        assertNull(dataAccess.getUser("test"));
     }
 
     @Test
