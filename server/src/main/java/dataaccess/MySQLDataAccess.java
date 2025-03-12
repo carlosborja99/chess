@@ -146,6 +146,7 @@ public class MySQLDataAccess implements DataAccess {
     public void createGame(GameData game) throws DataAccessException {
         String sql = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?, ?)";
         String gameJson = gson.toJson(game.game());
+        System.out.println("Storing game JSON: " + gameJson); // Debug
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(sql)){
             ps.setInt(1, game.gameID());

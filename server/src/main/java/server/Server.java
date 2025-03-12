@@ -21,7 +21,6 @@ public class Server {
         this.userService = new UserService(dataAccess);
         this.gameService = new GameService(dataAccess);
         this.gson = new Gson();
-        //
     }
 
     public int run(int desiredPort) {
