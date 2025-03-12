@@ -1,8 +1,7 @@
 package dataaccess;
 
 import chess.ChessGame;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
@@ -24,7 +23,7 @@ public class MySQLDataAccess implements DataAccess {
             """,
             """
             CREATE TABLE IF NOT EXISTS games (
-                gameID INT NOT NULL PRIMARY KEY,
+                gameID INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 whiteUsername VARCHAR (255),
                 blackUsername VARCHAR (255),
                 gameName VARCHAR (255) NOT NULL,
@@ -47,6 +46,16 @@ public class MySQLDataAccess implements DataAccess {
     public void configureDatabase()  throws DataAccessException {
         DatabaseManager.createDatabase();
         try (var conn = DatabaseManager.getConnection()) {
+            String[] dropStatement = {
+                    "DROP TABLE IF EXISTS authorization_data",
+                    "DROP TABLE IF EXISTS games",
+                    "DROP TABLE IF EXISTS users"
+            };
+            for (String drop : dropStatement) {
+                try (var stmt = conn.prepareStatement(drop)) {
+                    stmt.executeUpdate();
+                }
+            }
             for (String statement : SQLStatement) {
                 try (var ps = conn.prepareStatement(statement)) {
                     ps.executeUpdate();
@@ -82,7 +91,7 @@ public class MySQLDataAccess implements DataAccess {
     public int createGameID() throws DataAccessException {
         String sql = "INSERT INTO games (gameName, game) VALUES (?, ?)";
         try (var conn = DatabaseManager.getConnection();
-            var ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
+             var ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             ps.setString(1, "New Game");
             ps.setString(2, gson.toJson(new ChessGame()));
             ps.executeUpdate();
@@ -102,7 +111,7 @@ public class MySQLDataAccess implements DataAccess {
         String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
         String hashedPassword = BCrypt.hashpw(user.password(), BCrypt.gensalt());
         try (var conn = DatabaseManager.getConnection();
-            var ps = conn.prepareStatement(sql)) {
+             var ps = conn.prepareStatement(sql)) {
             ps.setString(1, user.username());
             ps.setString(2, hashedPassword);
             ps.setString(3, user.email());
@@ -118,24 +127,24 @@ public class MySQLDataAccess implements DataAccess {
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
-            try (var rs = ps.executeQuery(sql)) {
+            try (var rs = ps.executeQuery()) {
                 if(rs.next()){
                     return new UserData(
                             rs.getString("username"),
                             rs.getString("password"),
                             rs.getString("email")
-                            );
+                    );
                 }
             }
         }catch(SQLException e){
-            throw new DataAccessException("Unable to create user: " + e.getMessage());
+            throw new DataAccessException("Unable to get requested user: " + e.getMessage());
         }
         return null;
     }
 
     @Override
     public void createGame(GameData game) throws DataAccessException {
-        String sql = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, gameState) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?, ?)";
         String gameJson = gson.toJson(game.game());
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(sql)){
@@ -158,7 +167,7 @@ public class MySQLDataAccess implements DataAccess {
             ps.setInt(1, gameID);
             try (var rs = ps.executeQuery()) {
                 if(rs.next()){
-                    ChessGame game = gson.fromJson(rs.getString("gameState"), ChessGame.class);
+                    ChessGame game = gson.fromJson(rs.getString("game"), ChessGame.class);
                     return new GameData(
                             rs.getInt("gameID"),
                             rs.getString("whiteUsername"),
@@ -182,7 +191,7 @@ public class MySQLDataAccess implements DataAccess {
              var ps = conn.prepareStatement(sql);
              var rs = ps.executeQuery()) {
             while (rs.next()) {
-                ChessGame game = gson.fromJson(rs.getString("gameState"), ChessGame.class);
+                ChessGame game = gson.fromJson(rs.getString("game"), ChessGame.class);
                 gameList.add(new GameData(
                         rs.getInt("gameID"),
                         rs.getString("whiteUsername"),
@@ -199,7 +208,7 @@ public class MySQLDataAccess implements DataAccess {
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
-        String sql = "UPDATE games SET whiteUsername = ?, blackUsername = ?, gameName = ?, gameState = ? WHERE gameID = ?";
+        String sql = "UPDATE games SET whiteUsername = ?, blackUsername = ?, gameName = ?, game = ? WHERE gameID = ?";
         String gameJson = gson.toJson(game.game());
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(sql)){

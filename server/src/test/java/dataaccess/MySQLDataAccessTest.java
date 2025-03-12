@@ -39,7 +39,7 @@ class MySQLDataAccessTest {
     void createUserSuccess() throws DataAccessException {
         UserData user = new UserData("test", "password", "test@email.com");
         dataAccess.createUser(user);
-        UserData user2 = dataAccess.getUser("user");
+        UserData user2 = dataAccess.getUser("test");
         assertNotNull(user2);
         assertEquals("test", user2.username());
     }
@@ -55,7 +55,7 @@ class MySQLDataAccessTest {
     void getUserSuccess() throws DataAccessException {
         UserData user = new UserData("test", "password", "test@email.com");
         dataAccess.createUser(user);
-        UserData user2 = dataAccess.getUser("user");
+        UserData user2 = dataAccess.getUser("test");
         assertNotNull(user2);
         assertEquals("test", user2.username());
     }
@@ -112,6 +112,9 @@ class MySQLDataAccessTest {
 
     @Test
     void updateGameSuccess() throws DataAccessException {
+        UserData user = new UserData("white", "password", "test@email.com");
+        dataAccess.createUser(user);
+
         GameData game = new GameData(1, null, null, "testGame", new ChessGame());
         dataAccess.createGame(game);
         GameData game2 = new GameData(1, "white", null, "updateGame", new ChessGame());
@@ -129,6 +132,8 @@ class MySQLDataAccessTest {
 
     @Test
     void createAuthorizationSuccess() throws DataAccessException {
+        UserData user = new UserData("user", "password", "test@email.com");
+        dataAccess.createUser(user);
         AuthData authData = new AuthData("token", "user");
         dataAccess.createAuthorization(authData);
         AuthData authData2 = dataAccess.getAuthorization("token");
@@ -138,6 +143,8 @@ class MySQLDataAccessTest {
 
     @Test
     void createDuplicateAuthorizationFailure() throws DataAccessException {
+        UserData user = new UserData("user", "password", "test@email.com");
+        dataAccess.createUser(user);
         AuthData authData = new AuthData("token", "user");
         dataAccess.createAuthorization(authData);
         assertThrows(DataAccessException.class, () -> dataAccess.createAuthorization(authData));
@@ -145,6 +152,9 @@ class MySQLDataAccessTest {
 
     @Test
     void getAuthorizationSuccess() throws DataAccessException {
+        UserData user = new UserData("user", "password", "test@email.com");
+        dataAccess.createUser(user);
+
         AuthData authData = new AuthData("token", "user");
         dataAccess.createAuthorization(authData);
         AuthData authData2 = dataAccess.getAuthorization("token");
@@ -159,7 +169,9 @@ class MySQLDataAccessTest {
 
     @Test
     void deleteAuthorizationSuccess() throws DataAccessException {
-        AuthData authData = new AuthData("token", "user");
+        UserData user = new UserData("test", "password", "test@email.com");
+        dataAccess.createUser(user);
+        AuthData authData = new AuthData("token", "test");
         dataAccess.createAuthorization(authData);
         dataAccess.deleteAuthorization("token");
         assertNull(dataAccess.getAuthorization("token"));
