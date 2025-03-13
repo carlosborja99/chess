@@ -123,23 +123,35 @@ public class MySQLDataAccess implements DataAccess {
     public void configureDatabase()  throws DataAccessException {
         DatabaseManager.createDatabase();
         try (var conn = DatabaseManager.getConnection()) {
-            String[] dropStatement = {
-                    "DROP TABLE IF EXISTS authorization_data",
-                    "DROP TABLE IF EXISTS games",
-                    "DROP TABLE IF EXISTS users"
-            };
-            for (String drop : dropStatement) {
-                try (var stmt = conn.prepareStatement(drop)) {
-                    stmt.executeUpdate();
+            String[] tables = {"users", "games", "authorization_data"};
+            for (int i = 0; i < tables.length; i++) {
+                if (!checkTable(conn, tables[i])) {
+                    try (var ps = conn.prepareStatement(SQLStatement[i])) {
+                        ps.executeUpdate();
+                    }
                 }
             }
-            for (String statement : SQLStatement) {
-                try (var ps = conn.prepareStatement(statement)) {
-                    ps.executeUpdate();
+            try (var stmt = conn.createStatement()) {
+                stmt.executeQuery("SELECT 1 FROM users LIMIT 1;");
+            } catch (SQLException e) {
+                for (int i = 0; i < tables.length; i++) {
+                    try (var ps = conn.prepareStatement("DROP TABLE IF EXISTS" + tables[i])) {
+                        ps.executeUpdate();
+                    }
+                    try (var ps = conn.prepareStatement(SQLStatement[i])) {
+                        ps.executeUpdate();
+                    }
                 }
             }
         }catch(SQLException e){
             throw new DataAccessException("Unable to configure database: " + e.getMessage());
+        }
+    }
+
+    private boolean checkTable(Connection conn, String table) throws SQLException {
+        DatabaseMetaData meta = conn.getMetaData();
+        try (ResultSet rs = meta.getTables(null, null, table, new String[]{"TABLE"})) {
+            return rs.next();
         }
     }
 
@@ -223,7 +235,6 @@ public class MySQLDataAccess implements DataAccess {
     public void createGame(GameData game) throws DataAccessException {
         String sql = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?, ?)";
         String gameJson = gson.toJson(game.game());
-        System.out.println("Storing game JSON: " + gameJson); // Debug
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(sql)){
             ps.setInt(1, game.gameID());
