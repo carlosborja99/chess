@@ -24,6 +24,8 @@ public class UserService {
 
     public RegisterResponse register(RegisterRequest request) throws DataAccessException {
         checkRegistration(request);
+        UserData existingUser = dataAccess.getUser(request.username());
+        if (existingUser != null) {throw new DataAccessException("User already exists");}
         String hashedPassword = BCrypt.hashpw(request.password, BCrypt.gensalt());
         System.out.println("Hashed password: " + hashedPassword);
         UserData user = new UserData(request.username, hashedPassword, request.email);
