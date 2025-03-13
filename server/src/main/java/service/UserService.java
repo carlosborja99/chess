@@ -4,12 +4,17 @@ import dataaccess.*;
 import model.UserData;
 import model.AuthData;
 import java.util.UUID;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class UserService {
     private final DataAccess dataAccess;
 
     public UserService(DataAccess dataAccess) {
         this.dataAccess = dataAccess;
+    }
+
+    public void clear() throws DataAccessException {
+        dataAccess.clear();
     }
     public record RegisterRequest(String username, String password, String email) {}
     public record RegisterResponse(String authToken, String username) {}
@@ -19,7 +24,9 @@ public class UserService {
 
     public RegisterResponse register(RegisterRequest request) throws DataAccessException {
         checkRegistration(request);
-        UserData user = new UserData(request.username, request.password, request.email);
+        String hashedPassword = BCrypt.hashpw(request.password, BCrypt.gensalt());
+        System.out.println("Hashed password: " + hashedPassword);
+        UserData user = new UserData(request.username, hashedPassword, request.email);
         dataAccess.createUser(user);
         String authToken = generateToken();
         dataAccess.createAuthorization(new AuthData(authToken, request.username()));
@@ -38,7 +45,13 @@ public class UserService {
         return new LoginResponse(request.username(), authToken);
     }
     private void loginCredentials(UserData user, String password) throws DataAccessException {
-        if (user == null || !user.password().equals(password)) {
+        if (user == null ){
+            throw new DataAccessException("Error: unauthorized");
+        }
+        System.out.println("Stored password: " + user.password());
+        System.out.println("Provided password: " + password);
+        System.out.println("BCrypt check: " + BCrypt.checkpw(password, user.password()));
+        if(!BCrypt.checkpw(password, user.password())) {
             throw new DataAccessException("Error: unauthorized");
         }
     }

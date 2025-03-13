@@ -53,6 +53,7 @@ public class Server {
     private Object clear(Request request, Response response) {
         try {
             gameService.clear();
+            userService.clear();
             response.status(200);
             return "{}";
         } catch (DataAccessException e) {
