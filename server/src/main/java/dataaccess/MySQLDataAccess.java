@@ -1,9 +1,6 @@
 package dataaccess;
 
-import chess.ChessBoard;
-import chess.ChessGame;
-import chess.ChessPiece;
-import chess.ChessPosition;
+import chess.*;
 import com.google.gson.*;
 import model.AuthData;
 import model.GameData;
@@ -16,11 +13,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This java file handles all data access operations while using a MySQL database.
+ */
 public class MySQLDataAccess implements DataAccess {
+    private final String[] SQLStatement = {
+            "CREATE TABLE IF NOT EXISTS users (" +
+                "username VARCHAR (255) NOT NULL PRIMARY KEY, " +
+                "password VARCHAR (255) NOT NULL, " +
+                "email VARCHAR (255) NOT NULL)",
+            "CREATE TABLE IF NOT EXISTS games (" +
+                "gameID INT NOT NULL PRIMARY KEY AUTO_INCREMENT," +
+                "whiteUsername VARCHAR (255)," +
+                "blackUsername VARCHAR (255)," +
+                "gameName VARCHAR (255) NOT NULL," +
+                "game TEXT NOT NULL," +
+                "FOREIGN KEY (whiteUsername) REFERENCES users (username), " +
+                "FOREIGN KEY (blackUsername) REFERENCES users (username))",
+            "CREATE TABLE IF NOT EXISTS authorization_data (" +
+                "authToken VARCHAR (255) NOT NULL PRIMARY KEY, " +
+                "username VARCHAR (255) NOT NULL, " +
+                "FOREIGN KEY (username) REFERENCES users (username))"
+
+    };
+
     private final Gson gson;
 
     public MySQLDataAccess() {
-        this.gson = new GsonBuilder()
+        gson = configureGson();
+    }
+
+    private Gson configureGson() {
+        return new GsonBuilder()
                 .registerTypeAdapter(ChessGame.class, new adaptChessGame())
                 .registerTypeAdapter(ChessBoard.class, new adaptChessBoard())
                 .registerTypeAdapter(ChessPosition.class, new adaptChessPosition())
@@ -90,39 +114,11 @@ public class MySQLDataAccess implements DataAccess {
             return jsonObject;
         }
     }
-    private final String[] SQLStatement = {
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                username VARCHAR (255) NOT NULL PRIMARY KEY,
-                password VARCHAR (255) NOT NULL,
-                email VARCHAR (255) NOT NULL
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS games (
-                gameID INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-                whiteUsername VARCHAR (255),
-                blackUsername VARCHAR (255),
-                gameName VARCHAR (255) NOT NULL,
-                game TEXT NOT NULL,
-                FOREIGN KEY (whiteUsername) REFERENCES users (username),
-                FOREIGN KEY (blackUsername) REFERENCES users (username)
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS authorization_data (
-                authToken VARCHAR (255) NOT NULL PRIMARY KEY,
-                username VARCHAR (255) NOT NULL,
-                FOREIGN KEY (username) REFERENCES users (username)
-            )
-            """
-    };
-
 
 
     public void configureDatabase()  throws DataAccessException {
         DatabaseManager.createDatabase();
-        try (var conn = DatabaseManager.getConnection()) {
+        try (Connection conn = DatabaseManager.getConnection()) {
             String[] tables = {"users", "games", "authorization_data"};
             for (int i = 0; i < tables.length; i++) {
                 if (!checkTable(conn, tables[i])) {
@@ -165,7 +161,7 @@ public class MySQLDataAccess implements DataAccess {
     @Override
     public void clear() throws DataAccessException {
         String[] tables = {"games", "authorization_data", "users"};
-        try (var conn = DatabaseManager.getConnection()){
+        try (Connection conn = DatabaseManager.getConnection()){
             for (String table : tables) {
                 try (var ps = conn.prepareStatement("DELETE FROM " + table)){
                     ps.executeUpdate();
