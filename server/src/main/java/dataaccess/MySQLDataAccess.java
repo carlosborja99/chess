@@ -8,7 +8,6 @@ import com.google.gson.*;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
-import org.eclipse.jetty.util.security.Password;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.lang.reflect.Type;
@@ -19,11 +18,6 @@ import java.util.Map;
 
 public class MySQLDataAccess implements DataAccess {
     private final Gson gson;
-
-    public interface DataAccess {
-        void clearGame() throws DataAccessException;
-        void clearUser() throws DataAccessException;
-    }
 
     public MySQLDataAccess() {
         this.gson = new GsonBuilder()
@@ -170,11 +164,10 @@ public class MySQLDataAccess implements DataAccess {
     }
     @Override
     public void clear() throws DataAccessException {
+        String[] tables = {"games", "authorization_data", "users"};
         try (var conn = DatabaseManager.getConnection()){
-            String[] tables = {"games", "authorization_data", "users"};
             for (String table : tables) {
-                String sql = "DELETE FROM " + table;
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                try (var ps = conn.prepareStatement("DELETE FROM " + table)){
                     ps.executeUpdate();
                 }
             }

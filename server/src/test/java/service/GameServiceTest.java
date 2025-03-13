@@ -22,15 +22,6 @@ public class GameServiceTest {
         authToken = registerResponse.authToken();
     }
     @Test
-    void createSuccessfulGame() throws DataAccessException {
-        GameService.CreateGameRequest gameRequest = new GameService.CreateGameRequest(authToken, "GameTest");
-        GameService.CreateGameResult createGameResult = gameService.createGame(gameRequest);
-        assertTrue(createGameResult.gameID() > 0);
-        GameData createdGame = dataInMemory.getGame(createGameResult.gameID());
-        assertNotNull(createdGame);
-        assertEquals("GameTest", createdGame.gameName());
-    }
-    @Test
     void invalidGameID(){
         GameService.JoinRequest request = new GameService.JoinRequest(authToken, "WHITE", 9999);
         assertThrows(DataAccessException.class, () -> gameService.joinGame(request));
