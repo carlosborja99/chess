@@ -1,18 +1,95 @@
 package dataaccess;
 
+import chess.ChessBoard;
 import chess.ChessGame;
+import chess.ChessPiece;
+import chess.ChessPosition;
 import com.google.gson.*;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
 import org.mindrot.jbcrypt.BCrypt;
+
+import java.lang.reflect.Type;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MySQLDataAccess implements DataAccess {
-    private final Gson gson = new Gson();
+    private final Gson gson;
 
+    public MySQLDataAccess() {
+        this.gson = new GsonBuilder()
+                .registerTypeAdapter(ChessGame.class, new adaptChessGame())
+                .registerTypeAdapter(ChessBoard.class, new adaptChessBoard())
+                .registerTypeAdapter(ChessPosition.class, new adaptChessPosition())
+                .create();
+    }
+    private static class adaptChessGame implements JsonSerializer<ChessGame>, JsonDeserializer<ChessGame> {
+        @Override
+        public JsonElement serialize(ChessGame chessGame, Type type, JsonSerializationContext jsonSerializationContext) {
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.add("board", jsonSerializationContext.serialize(chessGame.getBoard()));
+            jsonObject.addProperty("teamTurn", chessGame.getTeamTurn().toString());
+            return jsonObject;
+        }
+
+        @Override
+        public ChessGame deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            ChessGame game = new ChessGame();
+            game.setBoard(jsonDeserializationContext.deserialize(jsonObject.get("board"), ChessBoard.class));
+            game.setTeamTurn(ChessGame.TeamColor.valueOf(jsonObject.get("teamTurn").getAsString()));
+            return game;
+        }
+    }
+
+    private static class adaptChessBoard implements JsonSerializer<ChessBoard>, JsonDeserializer<ChessBoard> {
+
+        @Override
+        public JsonElement serialize(ChessBoard chessBoard, Type type, JsonSerializationContext jsonSerializationContext) {
+            JsonObject jsonObject = new JsonObject();
+            for(Map.Entry<ChessPosition, ChessPiece> entry : chessBoard.getBoard().entrySet()) {
+                String key = String.valueOf(entry.getKey().getRow()) + "," + String.valueOf(entry.getKey().getColumn());
+                jsonObject.add(key, jsonSerializationContext.serialize(entry.getValue()));
+            }
+            return jsonObject;
+        }
+
+        @Override
+        public ChessBoard deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            ChessBoard board = new ChessBoard();
+            for(Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                String[] place = entry.getKey().split(",");
+                int row = Integer.parseInt(place[0]);
+                int column = Integer.parseInt(place[1]);
+                ChessPiece piece = jsonDeserializationContext.deserialize(entry.getValue(), ChessPiece.class);
+                board.addPiece(new ChessPosition(row, column), piece);
+            }
+            return board;
+        }
+
+    }
+
+    private static class adaptChessPosition implements JsonSerializer<ChessPosition>, JsonDeserializer<ChessPosition> {
+        @Override
+        public ChessPosition deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            int row = jsonObject.get("row").getAsInt();
+            int column = jsonObject.get("column").getAsInt();
+            return new ChessPosition(row, column);
+        }
+
+        @Override
+        public JsonElement serialize(ChessPosition chessPosition, Type type, JsonSerializationContext jsonSerializationContext) {
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("row", chessPosition.getRow());
+            jsonObject.addProperty("column", chessPosition.getColumn());
+            return jsonObject;
+        }
+    }
     private final String[] SQLStatement = {
             """
             CREATE TABLE IF NOT EXISTS users (
