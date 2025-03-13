@@ -25,9 +25,10 @@ public class GameService {
     public CreateGameResult createGame(CreateGameRequest request) throws DataAccessException{
         AuthData auth = validAuthorization(request.authToken());
         checkGameName(request.gameName);
-        int gameID = dataAccess.createGameID();
+        String gameName = request.gameName;
+        int gameID = dataAccess.createGameID(gameName);
         GameData game = new GameData(gameID, null, null, request.gameName(), new ChessGame());
-        dataAccess.createGame(game);
+//        gameID = dataAccess.createGame(game) + 1;
         return new CreateGameResult(gameID);
     }
 

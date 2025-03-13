@@ -31,7 +31,8 @@ class MySQLDataAccessTest {
 
     @Test
     void createGameIDSuccess() throws DataAccessException {
-        int id = dataAccess.createGameID();
+        String gameName = "test";
+        int id = dataAccess.createGameID(gameName);
         assertTrue(id > 0);
     }
 

@@ -18,7 +18,7 @@ public class AccessDataInMemory implements DataAccess {
     }
 
     @Override
-    public int createGameID() throws DataAccessException {
+    public int createGameID(String gameName) throws DataAccessException {
         return nextGameId++;
     }
 
@@ -35,8 +35,9 @@ public class AccessDataInMemory implements DataAccess {
     }
 
     @Override
-    public void createGame(GameData newGame) throws DataAccessException{
+    public int createGame(GameData newGame) throws DataAccessException{
         games.put(newGame.gameID(), newGame);
+        return newGame.gameID();
     }
     @Override
     public GameData getGame(int gameID) throws DataAccessException{

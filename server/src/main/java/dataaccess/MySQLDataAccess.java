@@ -177,11 +177,11 @@ public class MySQLDataAccess implements DataAccess {
     }
 
     @Override
-    public int createGameID() throws DataAccessException {
+    public int createGameID(String gameName) throws DataAccessException {
         String sql = "INSERT INTO games (gameName, game) VALUES (?, ?)";
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
-            ps.setString(1, "New Game");
+            ps.setString(1, gameName);
             ps.setString(2, gson.toJson(new ChessGame()));
             ps.executeUpdate();
             try (var rs = ps.getGeneratedKeys()){
@@ -232,9 +232,10 @@ public class MySQLDataAccess implements DataAccess {
     }
 
     @Override
-    public void createGame(GameData game) throws DataAccessException {
+    public int createGame(GameData game) throws DataAccessException {
         String sql = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?, ?)";
         String gameJson = gson.toJson(game.game());
+
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(sql)){
             ps.setInt(1, game.gameID());
@@ -243,9 +244,15 @@ public class MySQLDataAccess implements DataAccess {
             ps.setString(4, game.gameName());
             ps.setString(5, gameJson);
             ps.executeUpdate();
+            var rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
         } catch (SQLException e) {
             throw new DataAccessException("Unable to create game: " + e.getMessage());
         }
+
     }
 
     @Override
