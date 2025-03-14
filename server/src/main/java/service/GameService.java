@@ -1,9 +1,15 @@
 package service;
 import chess.ChessGame;
-import dataaccess.*;
-import model.*;
+import dataaccess.DataAccess;
+import dataaccess.DataAccessException;
+import model.AuthData;
+import model.GameData;
+
 import java.util.List;
 
+/**
+ * Handles chess game operations like creating, joining and listing games.
+ */
 public class GameService {
     private final DataAccess dataAccess;
 
@@ -18,20 +24,35 @@ public class GameService {
     public record ListGamesRequest(String authToken){}
     public record ListGamesResult(List<GameData> games){}
 
+    /**
+     * Clears all game-related data from the database
+     * @throws DataAccessException if the operation fails
+     */
     public void clear() throws DataAccessException {
         dataAccess.clear();
     }
 
+    /**
+     * Create new chess game with the specified name.
+     * @param request contains authentication token and game name.
+     * @return the game result with the game ID.
+     * @throws DataAccessException
+     */
     public CreateGameResult createGame(CreateGameRequest request) throws DataAccessException{
         AuthData auth = validAuthorization(request.authToken());
         checkGameName(request.gameName);
         String gameName = request.gameName;
         int gameID = dataAccess.createGameID(gameName);
         GameData game = new GameData(gameID, null, null, request.gameName(), new ChessGame());
-//        gameID = dataAccess.createGame(game) + 1;
         return new CreateGameResult(gameID);
     }
 
+    /**
+     * Allows the player to join an existing game.
+     * @param request has the authToken, player color, and the game ID.
+     * @return a result that shows a successful join
+     * @throws DataAccessException if the request is invalid or the game spot is already taken.
+     */
     public JoinResult joinGame(JoinRequest request) throws DataAccessException{
         if (request.gameID() <= 0){
             throw new DataAccessException("Bad Request");
@@ -96,6 +117,13 @@ public class GameService {
             throw new DataAccessException("Bad Request");
         }
     }
+
+    /**
+     * Lists all the existing games.
+     * @param request contains the Authentication token.
+     * @return the result containing a list with all the games
+     * @throws DataAccessException
+     */
     public ListGamesResult listGames(ListGamesRequest request) throws DataAccessException{
         AuthData authorized = validAuthorization(request.authToken());
         List<GameData> games = dataAccess.listOfGames();
