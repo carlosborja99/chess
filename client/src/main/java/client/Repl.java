@@ -1,6 +1,7 @@
 package client;
 
 import chess.*;
+import ui.RenderBoard;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -116,7 +117,32 @@ public class Repl {
                     }
                 }
                 break;
-
+            case "play":
+                if(input.length != 3 || (!input[2].equalsIgnoreCase("WHITE") && !input[2].equalsIgnoreCase("BLACK"))){
+                    System.out.println("Usage: play <gameNumber> <WHITE|BLACK>");
+                    break;
+                }
+                int playNum = Integer.parseInt(input[1]);
+                String gameID = gameNumberToID.get(playNum);
+                if (gameID == null){
+                    System.out.println("Invalid game number.");
+                    break;
+                }
+                facade.joinGame(gameID, input[2].toUpperCase());
+                System.out.println("Joined game as " + input[2]);
+                new RenderBoard().render(input[2].equalsIgnoreCase("WHITE"));
+                break;
+            case "observe":
+                if(input.length != 2){
+                    System.out.println("Usage: observe <gameNumber>");
+                    break;
+                }
+                int observeNum = Integer.parseInt(input[1]);
+                String gameIDObserve = gameNumberToID.get(observeNum);
+                if (gameIDObserve == null){
+                    System.out.println("Invalid game number.");
+                    break;
+                }
             default:
                 System.out.println("Unknown command. Type \"help\" for options.");
 
