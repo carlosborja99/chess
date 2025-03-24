@@ -70,5 +70,56 @@ public class Repl {
                 System.out.println("Unknown command. Type \"help\" for options.");
         }
     }
+    private void postLogin() throws Exception{
+        System.out.print(">>> ");
+        String[] input = scanner.nextLine().split("\\s+");
+        String command = input[0].toLowerCase();
+        switch (command){
+            case "help":
+                System.out.println("Available commands:");
+                System.out.println("  help - Display this help text");
+                System.out.println("  logout - Log out of your account");
+                System.out.println("  create <gameName> - Create a new game");
+                System.out.println("  list - List all existing games");
+                System.out.println("  play <gameNumber> <color> - Join a game as WHITE or BLACK");
+                System.out.println("  observe <gameNumber> - Observe a game");
+                break;
+            case "logout":
+                facade.logout();
+                System.out.println("Logged out.");
+                logged = false;
+                break;
+            case "create":
+                if(input.length != 2){
+                    System.out.println("Usage: create <gameName>");
+                    break;
+                }
+                facade.createMyGame(input[1]);
+                System.out.println("Game " + input[1] + " created.");
+                break;
+            case "list":
+                List<Map<String, Object>> games = facade.listOfGames();
+                gameNumberToID.clear();
+                if (games.isEmpty()){
+                    System.out.println("No games available.");
+                } else {
+                    for (int i = 0; i < games.size(); i++){
+                        Map<String, Object> game = games.get(i);
+                        String gameID = game.get("gameID").toString();
+                        String gameName = game.get("gameName").toString();
+                        String whitePlayer = game.get("whiteUsername").toString();
+                        String blackPlayer = game.get("blackUsername").toString();
+                        int num = i + 1;
+                        gameNumberToID.put(num, gameID);
+                        System.out.printf("%d. %s [White: %s] [Black: %s]%n",
+                                num, gameName, whitePlayer != null ? whitePlayer : "None", blackPlayer != null ? blackPlayer : "None");
+                    }
+                }
+                break;
 
+            default:
+                System.out.println("Unknown command. Type \"help\" for options.");
+
+        }
+    }
 }
