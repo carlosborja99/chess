@@ -5,6 +5,8 @@ import dataaccess.*;
 import service.*;
 import spark.*;
 
+import java.util.Map;
+
 public class Server {
     private final UserService userService;
     private final GameService gameService;
@@ -55,7 +57,8 @@ public class Server {
             gameService.clear();
             userService.clear();
             response.status(200);
-            return "{}";
+            response.type("application/json");
+            return gson.toJson(Map.of());
         } catch (DataAccessException e) {
             return errorResponse(response, 500, e.getMessage());
         }
