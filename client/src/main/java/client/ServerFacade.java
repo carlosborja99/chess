@@ -45,7 +45,7 @@ public class ServerFacade {
         postRequest("/game", Map.of("gameID", gameID, "playerColor", playerColor), authToken);
     }
 
-    private Map<String, Object> postRequest(String serverUrl, Map<String, String> request, String authToken) throws Exception{
+    Map<String, Object> postRequest(String serverUrl, Map<String, String> request, String authToken) throws Exception{
         URI uri = new URI(serverURL + serverUrl);
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod("POST");

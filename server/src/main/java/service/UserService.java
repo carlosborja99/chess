@@ -55,7 +55,7 @@ public class UserService {
     /**
      * Authenticates existing users and creates a new session for them.
      * @param request contains username and password.
-     * @return a LoginResponse with Username and a authorization Token
+     * @return a LoginResponse with Username and authorization Token
      * @throws DataAccessException if the login fails
      */
     public LoginResponse login(LoginRequest request) throws DataAccessException {
