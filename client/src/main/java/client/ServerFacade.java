@@ -29,8 +29,20 @@ public class ServerFacade {
     }
 
     public void logout() throws Exception {
-        postRequest("/session", null, authToken);
+        HttpURLConnection connection = deleteRequest("/session", authToken);
         authToken = null;
+        response(connection);
+    }
+
+    private HttpURLConnection deleteRequest(String serverUrl, String authToken) throws Exception {
+        URI uri = new URI(serverURL + serverUrl.replaceFirst("^/", ""));
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+        connection.setRequestMethod("DELETE");
+        if (authToken != null) {
+            connection.setRequestProperty("Authorization", authToken);
+        }
+        return connection;
+
     }
 
     public Map<String, Object> createMyGame(String gameName) throws Exception {

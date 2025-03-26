@@ -105,7 +105,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void JoinGameSuccess() throws Exception{
+    void JoinGameSuccessWhitePlayer() throws Exception{
         facade.register("player", "password", "player@email.com");
         Map<String, Object> gameData = facade.createMyGame("GameTest");
         String gameID = gameData.get("gameID").toString();
@@ -114,6 +114,18 @@ public class ServerFacadeTests {
         assertFalse(games.isEmpty(), "Game list should not be empty");
         assertEquals("player", games.get(0).get("whiteUsername"), "Player should be in the white team");
     }
+
+    @Test
+    void JoinGameSuccessBlackPlayer() throws Exception{
+        facade.register("player", "password", "player@email.com");
+        Map<String, Object> gameData = facade.createMyGame("GameTest");
+        String gameID = gameData.get("gameID").toString();
+        assertDoesNotThrow(() -> facade.joinGame(gameID, "BLACK"));
+        var games = facade.listOfGames();
+        assertFalse(games.isEmpty(), "Game list should not be empty");
+        assertEquals("player", games.get(0).get("blackUsername"), "Player should be in the white team");
+    }
+
 
     @Test
     void joinGameInvalidColorFailure() throws Exception {
@@ -157,7 +169,7 @@ public class ServerFacadeTests {
         assertTrue(exception.getMessage().contains("Unauthorized"));
     }
 
-        @Test
+    @Test
     void ListMyGamesSuccess() throws Exception {
         facade.register("player", "password", "player@email.com");
         facade.createMyGame("GameTest");
@@ -167,9 +179,32 @@ public class ServerFacadeTests {
     }
 
     @Test
+    void emptyGameListSuccess() throws Exception {
+        facade.register("player", "password", "player@email.com");
+        List <Map<String, Object>> games = facade.listOfGames();
+        assertTrue(games.isEmpty());
+    }
+
+    @Test
     void unauthorizedGamesListRequestFailure() throws Exception {
         Exception exception = assertThrows(Exception.class, () -> facade.listOfGames());
         assertTrue(exception.getMessage().contains("Unauthorized"));
     }
+    @Test
+    void logoutSuccess() throws Exception {
+        facade.register("player1", "password", "p1@email.com");
+        String firstToken = facade.getAuthToken();
+        assertNotNull(firstToken);
+        facade.logout();
+        assertNull(facade.getAuthToken());
+    }
 
+    @Test
+    void unauthorizedLogoutFailure() throws Exception {
+        facade.register("player1", "password", "p1@email.com");
+        facade.logout();
+        Exception exception = assertThrows(Exception.class, () -> facade.logout());
+        assertNull(facade.getAuthToken());
+
+    }
 }
