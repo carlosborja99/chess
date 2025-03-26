@@ -81,4 +81,20 @@ public class ServerFacadeTests {
         assertTrue(exception.getMessage().contains("already"));
     }
 
+    @Test
+    void positiveLogin() throws Exception {
+        facade.register("player", "password", "player");
+        Map<String, Object> authData = facade.login("player", "password");
+        assertNotNull(authData.get("authToken"));
+        assertTrue(((String) authData.get("authToken")).length() > 10);
+        assertEquals("player", authData.get("username"));
+    }
+
+    @Test
+    void loginPasswordFail() throws Exception {
+        facade.register("player", "password", "player");
+        Exception exception = assertThrows(Exception.class, () -> facade.login("player", "wrongPassword"));
+        assertTrue(exception.getMessage().contains("unauthorized"));
+    }
+
 }
