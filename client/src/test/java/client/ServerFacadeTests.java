@@ -133,4 +133,24 @@ public class ServerFacadeTests {
         assertTrue(exception.getMessage().contains("taken"));
     }
 
+    @Test
+    void joinGameNotValidColorFailure() throws Exception {
+        facade.register("player", "password", "player@email.com");
+        Map<String, Object> gameData = facade.createMyGame("GameTest");
+        String gameID = gameData.get("gameID").toString();
+        Exception exception = assertThrows(Exception.class, () -> facade.joinGame(gameID, "INVALID"));
+        assertTrue(exception.getMessage().contains("Bad Request"));
+    }
+
+    
+
+    @Test
+    void ListMyGamesSuccess() throws Exception {
+        facade.register("player", "password", "player@email.com");
+        facade.createMyGame("GameTest");
+        List <Map<String, Object>> games = facade.listOfGames();
+        assertFalse(games.isEmpty());
+        assertEquals("GameTest", games.get(0).get("gameName"));
+    }
+
 }

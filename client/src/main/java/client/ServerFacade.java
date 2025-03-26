@@ -10,7 +10,7 @@ import java.util.*;
 
 public class ServerFacade {
     final String serverURL;
-    private String authToken;
+    String authToken;
 
     public ServerFacade(String serverURL) {
         this.serverURL = serverURL;
@@ -83,10 +83,8 @@ public class ServerFacade {
         int status = connection.getResponseCode();
         if (status >= 200 && status < 300) {
             try (var in = connection.getInputStream()) {
-                // Expect an object with a "games" field containing the array
                 Type mapType = new TypeToken<Map<String, Object>>(){}.getType();
                 Map<String, Object> response = new Gson().fromJson(new InputStreamReader(in), mapType);
-                // Extract the "games" array and convert to List<Map>
                 if (response.containsKey("games")) {
                     return (List<Map<String, Object>>) response.get("games");
                 }
