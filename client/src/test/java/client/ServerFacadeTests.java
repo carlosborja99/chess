@@ -76,14 +76,14 @@ public class ServerFacadeTests {
 
     @Test
     void registerDuplicateFailure() throws Exception {
-        facade.register("player", "password", "player");
+        facade.register("player", "password", "player@email.com");
         Exception exception = assertThrows(Exception.class, () -> facade.register("player", "newPassword", "newemail@email.com"));
         assertTrue(exception.getMessage().contains("already"));
     }
 
     @Test
     void positiveLogin() throws Exception {
-        facade.register("player", "password", "player");
+        facade.register("player", "password", "player@email.com");
         Map<String, Object> authData = facade.login("player", "password");
         assertNotNull(authData.get("authToken"));
         assertTrue(((String) authData.get("authToken")).length() > 10);
@@ -92,14 +92,14 @@ public class ServerFacadeTests {
 
     @Test
     void loginPasswordFail() throws Exception {
-        facade.register("player", "password", "player");
+        facade.register("player", "password", "player@email.com");
         Exception exception = assertThrows(Exception.class, () -> facade.login("player", "wrongPassword"));
         assertTrue(exception.getMessage().contains("unauthorized"));
     }
 
     @Test
     void JoinGameSuccess() throws Exception{
-        facade.register("player", "password", "player");
+        facade.register("player", "password", "player@email.com");
         Map<String, Object> gameData = facade.createMyGame("GameTest");
         String gameID = gameData.get("gameID").toString();
         assertDoesNotThrow(() -> facade.joinGame(gameID, "WHITE"));
@@ -107,4 +107,24 @@ public class ServerFacadeTests {
         assertFalse(games.isEmpty(), "Game list should not be empty");
         assertEquals("player", games.get(0).get("whiteUsername"), "Player should be in the white team");
     }
+
+    @Test
+    void joinGameInvalidColorFailure() throws Exception {
+        facade.register("player", "password", "player@email.com");
+        Map<String, Object> gameData = facade.createMyGame("GameTest");
+        String gameID = gameData.get("gameID").toString();
+        Exception exception = assertThrows(Exception.class, () -> facade.joinGame(gameID, "INVALID ID"));
+        assertTrue(exception.getMessage().contains("Bad Request"), "THe expected error contains 'Bad Request', but got: " + exception.getMessage());
+    }
+
+    @Test
+    void joinGameAlreadyTakenFailure() throws Exception {
+        facade.register("player", "password", "player@email.com");
+        Map<String, Object> gameData = facade.createMyGame("GameTest");
+        String gameID = gameData.get("gameID").toString();
+        facade.joinGame(gameID, "BLACK");
+        Exception exception = assertThrows(Exception.class, () -> facade.joinGame(gameID, "BLACK"));
+        assertTrue(exception.getMessage().contains("taken"));
+    }
+
 }
