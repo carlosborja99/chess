@@ -123,7 +123,8 @@ public class Server {
             String authToken = request.headers("Authorization");
             userService.logout(new UserService.LogoutRequest(authToken));
             response.status(200);
-            return "{}";
+            response.type("application/json");
+            return gson.toJson(Map.of());
         }catch(DataAccessException e){
             return errorResponse(response,401, e.getMessage());
         }
