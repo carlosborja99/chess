@@ -5,7 +5,6 @@ import com.google.gson.*;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
-import org.mindrot.jbcrypt.BCrypt;
 
 import java.lang.reflect.Type;
 import java.sql.*;
@@ -17,7 +16,7 @@ import java.util.Map;
  * This java file handles all data access operations while using a MySQL database.
  */
 public class MySQLDataAccess implements DataAccess {
-    private final String[] SQLStatement = {
+    private final String[] SQL_STATEMENTS = {
             "CREATE TABLE IF NOT EXISTS users (" +
                 "username VARCHAR (255) NOT NULL PRIMARY KEY, " +
                 "password VARCHAR (255) NOT NULL, " +
@@ -34,7 +33,6 @@ public class MySQLDataAccess implements DataAccess {
                 "authToken VARCHAR (255) NOT NULL PRIMARY KEY, " +
                 "username VARCHAR (255) NOT NULL, " +
                 "FOREIGN KEY (username) REFERENCES users (username))"
-
     };
 
     private final Gson gson;
@@ -45,16 +43,17 @@ public class MySQLDataAccess implements DataAccess {
 
     private Gson configureGson() {
         return new GsonBuilder()
-                .registerTypeAdapter(ChessGame.class, new adaptChessGame())
-                .registerTypeAdapter(ChessBoard.class, new adaptChessBoard())
-                .registerTypeAdapter(ChessPosition.class, new adaptChessPosition())
+                .registerTypeAdapter(ChessGame.class, new AdaptChessGame())
+                .registerTypeAdapter(ChessBoard.class, new AdaptChessBoard())
+                .registerTypeAdapter(ChessPosition.class, new AdaptChessPosition())
                 .create();
     }
-    private static class adaptChessGame implements JsonSerializer<ChessGame>, JsonDeserializer<ChessGame> {
+    private static class AdaptChessGame implements JsonSerializer<ChessGame>, JsonDeserializer<ChessGame> {
         @Override
         public JsonElement serialize(ChessGame chessGame, Type type, JsonSerializationContext jsonSerializationContext) {
             JsonObject jsonObject = new JsonObject();
-            jsonObject.add("board", jsonSerializationContext.serialize(chessGame.getBoard()));
+            jsonObject.add("board",
+                    jsonSerializationContext.serialize(chessGame.getBoard()));
             jsonObject.addProperty("teamTurn", chessGame.getTeamTurn().toString());
             return jsonObject;
         }
@@ -69,13 +68,14 @@ public class MySQLDataAccess implements DataAccess {
         }
     }
 
-    private static class adaptChessBoard implements JsonSerializer<ChessBoard>, JsonDeserializer<ChessBoard> {
+    private static class AdaptChessBoard implements JsonSerializer<ChessBoard>, JsonDeserializer<ChessBoard> {
 
         @Override
         public JsonElement serialize(ChessBoard chessBoard, Type type, JsonSerializationContext jsonSerializationContext) {
             JsonObject jsonObject = new JsonObject();
             for(Map.Entry<ChessPosition, ChessPiece> entry : chessBoard.getBoard().entrySet()) {
-                String key = String.valueOf(entry.getKey().getRow()) + "," + String.valueOf(entry.getKey().getColumn());
+                String key = String.valueOf(entry.getKey().getRow()) + ","
+                        + String.valueOf(entry.getKey().getColumn());
                 jsonObject.add(key, jsonSerializationContext.serialize(entry.getValue()));
             }
             return jsonObject;
@@ -97,9 +97,10 @@ public class MySQLDataAccess implements DataAccess {
 
     }
 
-    private static class adaptChessPosition implements JsonSerializer<ChessPosition>, JsonDeserializer<ChessPosition> {
+    private static class AdaptChessPosition implements JsonSerializer<ChessPosition>, JsonDeserializer<ChessPosition> {
         @Override
-        public ChessPosition deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+        public ChessPosition deserialize(JsonElement jsonElement, Type type,
+                                         JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             int row = jsonObject.get("row").getAsInt();
             int column = jsonObject.get("column").getAsInt();
@@ -122,7 +123,7 @@ public class MySQLDataAccess implements DataAccess {
             String[] tables = {"users", "games", "authorization_data"};
             for (int i = 0; i < tables.length; i++) {
                 if (!checkTable(conn, tables[i])) {
-                    try (var ps = conn.prepareStatement(SQLStatement[i])) {
+                    try (var ps = conn.prepareStatement(SQL_STATEMENTS[i])) {
                         ps.executeUpdate();
                     }
                 }
@@ -134,7 +135,7 @@ public class MySQLDataAccess implements DataAccess {
                     try (var ps = conn.prepareStatement("DROP TABLE IF EXISTS" + tables[i])) {
                         ps.executeUpdate();
                     }
-                    try (var ps = conn.prepareStatement(SQLStatement[i])) {
+                    try (var ps = conn.prepareStatement(SQL_STATEMENTS[i])) {
                         ps.executeUpdate();
                     }
                 }

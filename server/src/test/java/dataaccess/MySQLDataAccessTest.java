@@ -22,9 +22,21 @@ class MySQLDataAccessTest {
         dataAccess.clear();
     }
 
+    private UserData newTestUser(String username) throws DataAccessException {
+        UserData user = new UserData(username, "password", username + "@email.com");
+        dataAccess.createUser(user);
+        return user;
+    }
+
+    private AuthData newTestAuthorization(String token, String username) throws DataAccessException {
+        AuthData auth = new AuthData(token, username);
+        dataAccess.createAuthorization(auth);
+        return auth;
+    }
+
     @Test
     void clearSuccess() throws DataAccessException {
-        dataAccess.createUser(new UserData("test", "password", "test@email.com"));
+        newTestUser("User");
         dataAccess.clear();
         assertNull(dataAccess.getUser("test"));
     }
@@ -33,8 +45,6 @@ class MySQLDataAccessTest {
     void clearFailure() throws DataAccessException {
         assertDoesNotThrow(() -> dataAccess.clear());
     }
-
-
 
     @Test
     void createGameIDSuccess() throws DataAccessException {
@@ -48,12 +58,9 @@ class MySQLDataAccessTest {
         assertThrows(DataAccessException.class, () -> dataAccess.createGameID(null));
     }
 
-
-
     @Test
     void createUserSuccess() throws DataAccessException {
-        UserData user = new UserData("test", "password", "test@email.com");
-        dataAccess.createUser(user);
+        UserData user = newTestUser("test");
         UserData user2 = dataAccess.getUser("test");
         assertNotNull(user2);
         assertEquals("test", user2.username());
@@ -61,18 +68,8 @@ class MySQLDataAccessTest {
 
     @Test
     void createDuplicateUserFailure() throws DataAccessException {
-        UserData user = new UserData("test", "password", "test@email.com");
-        assertDoesNotThrow(() -> dataAccess.createUser(user));
+        UserData user = newTestUser("test");
         assertThrows(DataAccessException.class, () -> dataAccess.createUser(user));
-    }
-
-    @Test
-    void getUserSuccess() throws DataAccessException {
-        UserData user = new UserData("test", "password", "test@email.com");
-        dataAccess.createUser(user);
-        UserData user2 = dataAccess.getUser("test");
-        assertNotNull(user2);
-        assertEquals("test", user2.username());
     }
 
     @Test
@@ -109,8 +106,8 @@ class MySQLDataAccessTest {
 
     @Test
     void updateGameSuccess() throws DataAccessException {
-        dataAccess.createUser(new UserData("whitePlayer", "password", "white@email.com"));
-        dataAccess.createUser(new UserData("blackPlayer", "password", "black@email.com"));
+        newTestUser("whitePLayer");
+        newTestUser("blackPlayer");
         int gameID = dataAccess.createGameID("test");
         GameData updatedGame = new GameData(gameID, "whitePlayer", "blackPlayer", "updatedGame", new ChessGame());
         dataAccess.updateGame(updatedGame);
@@ -127,10 +124,8 @@ class MySQLDataAccessTest {
 
     @Test
     void createAuthorizationSuccess() throws DataAccessException {
-        UserData user = new UserData("user", "password", "test@email.com");
-        dataAccess.createUser(user);
-        AuthData authData = new AuthData("token", "user");
-        dataAccess.createAuthorization(authData);
+        newTestUser("user");
+        AuthData authData = newTestAuthorization("token", "user");
         AuthData authData2 = dataAccess.getAuthorization("token");
         assertNotNull(authData2);
         assertEquals("user", authData2.username());
@@ -138,24 +133,11 @@ class MySQLDataAccessTest {
 
     @Test
     void createDuplicateAuthorizationFailure() throws DataAccessException {
-        UserData user = new UserData("user", "password", "test@email.com");
-        dataAccess.createUser(user);
-        AuthData authData = new AuthData("token", "user");
-        dataAccess.createAuthorization(authData);
-        assertThrows(DataAccessException.class, () -> dataAccess.createAuthorization(authData));
+        newTestUser("user");
+        newTestAuthorization("token", "user");
+        assertThrows(DataAccessException.class, () -> dataAccess.createAuthorization(new AuthData("token", "user")));
     }
 
-    @Test
-    void getAuthorizationSuccess() throws DataAccessException {
-        UserData user = new UserData("user", "password", "test@email.com");
-        dataAccess.createUser(user);
-
-        AuthData authData = new AuthData("token", "user");
-        dataAccess.createAuthorization(authData);
-        AuthData authData2 = dataAccess.getAuthorization("token");
-        assertNotNull(authData2);
-        assertEquals("user", authData2.username());
-    }
 
     @Test
     void getNonExistentAuthorizationFailure() throws DataAccessException {
@@ -164,10 +146,8 @@ class MySQLDataAccessTest {
 
     @Test
     void deleteAuthorizationSuccess() throws DataAccessException {
-        UserData user = new UserData("test", "password", "test@email.com");
-        dataAccess.createUser(user);
-        AuthData authData = new AuthData("token", "test");
-        dataAccess.createAuthorization(authData);
+        newTestUser("test");
+        newTestAuthorization("token", "test");
         dataAccess.deleteAuthorization("token");
         assertNull(dataAccess.getAuthorization("token"));
     }
@@ -192,8 +172,8 @@ class MySQLDataAccessTest {
 
     @Test
     void createGameSuccess() throws DataAccessException {
-        dataAccess.createUser(new UserData("whitePlayer", "passwordW", "white@email.com"));
-        dataAccess.createUser(new UserData("blackPlayer", "passwordB", "black@email.com"));
+        newTestUser("whitePlayer");
+        newTestUser("BlackPlayer");
         GameData game = new GameData(0, "whitePlayer", "blackPlayer", "updatedGame", new ChessGame());
         int gameID = dataAccess.createGame(game);
         GameData retrieve = dataAccess.getGame(gameID);
@@ -203,7 +183,7 @@ class MySQLDataAccessTest {
 
     @Test
     void createGameDuplicateFailure() throws DataAccessException {
-        dataAccess.createUser(new UserData("whitePlayer", "password1", "white@email.com"));
+        newTestUser("whitePlayer");
         GameData game = new GameData(0, "whitePlayer", "blackPlayerDoesNotExist", "testGame", new ChessGame());
         assertThrows(DataAccessException.class, () -> dataAccess.createGame(game));
     }

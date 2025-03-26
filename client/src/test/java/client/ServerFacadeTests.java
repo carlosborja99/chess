@@ -105,7 +105,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void JoinGameSuccessWhitePlayer() throws Exception{
+    void joinGameSuccessWhitePlayer() throws Exception{
         facade.register("player", "password", "player@email.com");
         Map<String, Object> gameData = facade.createMyGame("GameTest");
         String gameID = gameData.get("gameID").toString();
@@ -116,7 +116,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void JoinGameSuccessBlackPlayer() throws Exception{
+    void joinGameSuccessBlackPlayer() throws Exception{
         facade.register("player", "password", "player@email.com");
         Map<String, Object> gameData = facade.createMyGame("GameTest");
         String gameID = gameData.get("gameID").toString();
@@ -170,7 +170,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void ListMyGamesSuccess() throws Exception {
+    void listMyGamesSuccess() throws Exception {
         facade.register("player", "password", "player@email.com");
         facade.createMyGame("GameTest");
         List <Map<String, Object>> games = facade.listOfGames();
