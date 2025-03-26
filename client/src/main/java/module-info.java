@@ -1,3 +1,0 @@
-module client {
-    requires shared;
-}
