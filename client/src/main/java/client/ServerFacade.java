@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class ServerFacade {
@@ -46,7 +47,7 @@ public class ServerFacade {
     }
 
     Map<String, Object> postRequest(String serverUrl, Map<String, String> request, String authToken) throws Exception{
-        URI uri = new URI(serverURL + serverUrl);
+        URI uri = new URI(serverURL + serverUrl.replaceFirst("^/", ""));
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod("POST");
         if (authToken != null) {
@@ -98,15 +99,21 @@ public class ServerFacade {
         int status = http.getResponseCode();
         if (status < 300 && status >= 200) {
             try (var in = http.getInputStream()) {
+                if (in.available() == 0) {
+                    return Map.of();
+                }
                 Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
                 Map<String, Object> response = new Gson().fromJson(new InputStreamReader(in), mapType);
-                if (response.containsKey("authToken")) {
+                if (response != null && response.containsKey("authToken")) {
                     this.authToken = (String) response.get("authToken");
                 }
-                return response;
+                return response != null ? response : Map.of();
             }
         } else {
             try (var in = http.getErrorStream()) {
+                if (in == null){
+                    throw new Exception("Unknown error occurred");
+                }
                 throw new Exception(new Gson().fromJson(new InputStreamReader(in), Map.class).get("message").toString());
             }
         }

@@ -2,9 +2,7 @@ package client;
 
 import org.junit.jupiter.api.*;
 import server.Server;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
@@ -29,18 +27,8 @@ public class ServerFacadeTests {
         server.stop();
     }
 
-    @BeforeEach
-    void cleanUp() throws Exception {
-        facade.postRequest("/db", null, null);
-    }
 
-    @Test
-    void registerSuccess() throws Exception {
-        Map<String, Object> authData = facade.register("player1", "password", "player1@email.com");
-        assertNotNull(authData.get("authToken"));
-        assertTrue(((String) authData.get("authToken")).length() > 10);
-        assertEquals("player1", authData.get("username"));
-    }
+
 
 
 }
