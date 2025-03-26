@@ -98,6 +98,12 @@ public class ServerFacadeTests {
     }
 
     @Test
+    void loginNonExistentUserFailure() throws Exception {
+        Exception exception = assertThrows(Exception.class, () -> facade.login("thisPlayerDoesNotExist", "password"));
+        assertTrue(exception.getMessage().contains("unauthorized"));
+    }
+
+    @Test
     void JoinGameSuccess() throws Exception{
         facade.register("player", "password", "player@email.com");
         Map<String, Object> gameData = facade.createMyGame("GameTest");
