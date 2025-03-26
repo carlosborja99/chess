@@ -2,18 +2,15 @@ package client;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-
-import java.io.InputStreamReader;
 import java.lang.reflect.Type;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 
 public class ServerFacade {
-    private final String serverURL;
-    private String authToken;
+    final String serverURL;
+    String authToken;
 
     public ServerFacade(String serverURL) {
         this.serverURL = serverURL;
@@ -32,8 +29,20 @@ public class ServerFacade {
     }
 
     public void logout() throws Exception {
-        postRequest("/session", null, authToken);
+        HttpURLConnection connection = deleteRequest("/session", authToken);
         authToken = null;
+        response(connection);
+    }
+
+    private HttpURLConnection deleteRequest(String serverUrl, String authToken) throws Exception {
+        URI uri = new URI(serverURL + serverUrl.replaceFirst("^/", ""));
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+        connection.setRequestMethod("DELETE");
+        if (authToken != null) {
+            connection.setRequestProperty("Authorization", authToken);
+        }
+        return connection;
+
     }
 
     public Map<String, Object> createMyGame(String gameName) throws Exception {
@@ -45,11 +54,22 @@ public class ServerFacade {
     }
 
     public void joinGame(String gameID, String playerColor) throws Exception {
-        postRequest("/game", Map.of("gameID", gameID, "playerColor", playerColor), authToken);
+        putRequest("/game", Map.of("gameID", gameID, "playerColor", playerColor), authToken);
+    }
+
+    private Map<String, Object> putRequest(String serverUrl, Map<String, String> request, String authToken) throws Exception {
+        URI uri = new URI(serverURL + serverUrl.replaceFirst("^/", ""));
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+        connection.setRequestMethod("PUT");
+        if (authToken != null) {
+            connection.setRequestProperty("Authorization", authToken);
+        }
+        writeRequest(connection, request);
+        return response(connection);
     }
 
     Map<String, Object> postRequest(String serverUrl, Map<String, String> request, String authToken) throws Exception{
-        URI uri = new URI(serverURL + serverUrl);
+        URI uri = new URI(serverURL + serverUrl.replaceFirst("^/", ""));
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod("POST");
         if (authToken != null) {
@@ -75,9 +95,12 @@ public class ServerFacade {
         int status = connection.getResponseCode();
         if (status >= 200 && status < 300) {
             try (var in = connection.getInputStream()) {
-                Type listType = new TypeToken<List<Map<String, Object>>>() {}.getType();
-                Map<String, List<Map<String, Object>>> response = new Gson().fromJson(new InputStreamReader(in), listType);
-                return response.get("games");
+                Type mapType = new TypeToken<Map<String, Object>>(){}.getType();
+                Map<String, Object> response = new Gson().fromJson(new InputStreamReader(in), mapType);
+                if (response.containsKey("games")) {
+                    return (List<Map<String, Object>>) response.get("games");
+                }
+                return new ArrayList<>(); // Return empty list if no games
             }
         } else {
             try (var in = connection.getErrorStream()) {
@@ -101,15 +124,21 @@ public class ServerFacade {
         int status = http.getResponseCode();
         if (status < 300 && status >= 200) {
             try (var in = http.getInputStream()) {
+                if (in.available() == 0) {
+                    return Map.of();
+                }
                 Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
                 Map<String, Object> response = new Gson().fromJson(new InputStreamReader(in), mapType);
-                if (response.containsKey("authToken")) {
+                if (response != null && response.containsKey("authToken")) {
                     this.authToken = (String) response.get("authToken");
                 }
-                return response;
+                return response != null ? response : Map.of();
             }
         } else {
             try (var in = http.getErrorStream()) {
+                if (in == null){
+                    throw new Exception("Unknown error occurred");
+                }
                 throw new Exception(new Gson().fromJson(new InputStreamReader(in), Map.class).get("message").toString());
             }
         }

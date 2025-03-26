@@ -1,10 +1,11 @@
 package client;
 
+import chess.*;
 import ui.RenderBoard;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 import java.util.Scanner;
 
 public class Repl {

@@ -5,6 +5,8 @@ import dataaccess.*;
 import service.*;
 import spark.*;
 
+import java.util.Map;
+
 public class Server {
     private final UserService userService;
     private final GameService gameService;
@@ -55,7 +57,8 @@ public class Server {
             gameService.clear();
             userService.clear();
             response.status(200);
-            return "{}";
+            response.type("application/json");
+            return gson.toJson(Map.of("success", true));
         } catch (DataAccessException e) {
             return errorResponse(response, 500, e.getMessage());
         }
@@ -80,7 +83,7 @@ public class Server {
             String auth = request.headers("Authorization");
             GameService.JoinRequest joinRequest = gson.fromJson(request.body(), GameService.JoinRequest.class);
             GameService.JoinRequest updatedJoinRequest = new GameService.JoinRequest(
-              auth, joinRequest.playerColor(), joinRequest.gameID()
+                    auth, joinRequest.playerColor(), joinRequest.gameID()
             );
 
             GameService.JoinResult joinResult = gameService.joinGame(updatedJoinRequest);
@@ -120,7 +123,8 @@ public class Server {
             String authToken = request.headers("Authorization");
             userService.logout(new UserService.LogoutRequest(authToken));
             response.status(200);
-            return "{}";
+            response.type("application/json");
+            return gson.toJson(Map.of());
         }catch(DataAccessException e){
             return errorResponse(response,401, e.getMessage());
         }
