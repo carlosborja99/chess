@@ -97,4 +97,13 @@ public class ServerFacadeTests {
         assertTrue(exception.getMessage().contains("unauthorized"));
     }
 
+    @Test
+    void JoinGameSuccess() throws Exception{
+        facade.register("player", "password", "player");
+        Map<String, Object> gameData = facade.createMyGame("GameTest");
+        String gameID = gameData.get("gameID").toString();
+        assertDoesNotThrow(() -> facade.joinGame(gameID, "WHITE"));
+        var games = facade.listOfGames();
+        assertEquals("player", games.get(0).get("whiteUsername"));
+    }
 }
