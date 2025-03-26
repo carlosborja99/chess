@@ -104,6 +104,7 @@ public class ServerFacadeTests {
         String gameID = gameData.get("gameID").toString();
         assertDoesNotThrow(() -> facade.joinGame(gameID, "WHITE"));
         var games = facade.listOfGames();
-        assertEquals("player", games.get(0).get("whiteUsername"));
+        assertFalse(games.isEmpty(), "Game list should not be empty");
+        assertEquals("player", games.get(0).get("whiteUsername"), "Player should be in the white team");
     }
 }

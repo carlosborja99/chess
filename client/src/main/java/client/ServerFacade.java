@@ -43,7 +43,18 @@ public class ServerFacade {
     }
 
     public void joinGame(String gameID, String playerColor) throws Exception {
-        postRequest("/game", Map.of("gameID", gameID, "playerColor", playerColor), authToken);
+        putRequest("/game", Map.of("gameID", gameID, "playerColor", playerColor), authToken);
+    }
+
+    private Map<String, Object> putRequest(String serverURL, Map<String, String> request, String authToken) throws Exception {
+        URI uri = new URI(serverURL + serverURL.replaceFirst("^/", ""));
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+        connection.setRequestMethod("PUT");
+        if (authToken != null) {
+            connection.setRequestProperty("Authorization", authToken);
+        }
+        writeRequest(connection, request);
+        return response(connection);
     }
 
     Map<String, Object> postRequest(String serverUrl, Map<String, String> request, String authToken) throws Exception{
