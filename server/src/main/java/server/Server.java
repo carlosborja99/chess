@@ -58,7 +58,7 @@ public class Server {
             userService.clear();
             response.status(200);
             response.type("application/json");
-            return gson.toJson(Map.of());
+            return gson.toJson(Map.of("success", true));
         } catch (DataAccessException e) {
             return errorResponse(response, 500, e.getMessage());
         }

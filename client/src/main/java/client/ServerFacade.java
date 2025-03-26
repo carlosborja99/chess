@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 
 public class ServerFacade {
-    private final String serverURL;
+    final String serverURL;
     private String authToken;
 
     public ServerFacade(String serverURL) {
