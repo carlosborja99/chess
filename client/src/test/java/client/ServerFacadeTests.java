@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.*;
 import server.Server;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -142,15 +143,33 @@ public class ServerFacadeTests {
         assertTrue(exception.getMessage().contains("Bad Request"));
     }
 
-    
+    @Test
+    void successfullyCreateGame() throws Exception {
+        facade.register("player", "password", "player@email.com");
+        Map<String, Object> gameData = facade.createMyGame("GameTest");
+        assertNotNull(gameData.get("gameID"));
+        assertTrue(((Double) gameData.get("gameID")) > 0);
+    }
 
     @Test
+    void unauthorizedCreateGameFailure() throws Exception {
+        Exception exception = assertThrows(Exception.class, () -> facade.createMyGame("GameTest"));
+        assertTrue(exception.getMessage().contains("Unauthorized"));
+    }
+
+        @Test
     void ListMyGamesSuccess() throws Exception {
         facade.register("player", "password", "player@email.com");
         facade.createMyGame("GameTest");
         List <Map<String, Object>> games = facade.listOfGames();
         assertFalse(games.isEmpty());
-        assertEquals("GameTest", games.get(0).get("gameName"));
+        assertEquals("GameTest", games.getFirst().get("gameName"));
+    }
+
+    @Test
+    void unauthorizedGamesListRequestFailure() throws Exception {
+        Exception exception = assertThrows(Exception.class, () -> facade.listOfGames());
+        assertTrue(exception.getMessage().contains("Unauthorized"));
     }
 
 }
