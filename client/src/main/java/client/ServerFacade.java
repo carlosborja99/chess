@@ -6,7 +6,6 @@ import java.lang.reflect.Type;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 public class ServerFacade {
@@ -46,8 +45,8 @@ public class ServerFacade {
         putRequest("/game", Map.of("gameID", gameID, "playerColor", playerColor), authToken);
     }
 
-    private Map<String, Object> putRequest(String serverURL, Map<String, String> request, String authToken) throws Exception {
-        URI uri = new URI(serverURL + serverURL.replaceFirst("^/", ""));
+    private Map<String, Object> putRequest(String serverUrl, Map<String, String> request, String authToken) throws Exception {
+        URI uri = new URI(serverURL + serverUrl.replaceFirst("^/", ""));
         HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod("PUT");
         if (authToken != null) {
@@ -84,9 +83,14 @@ public class ServerFacade {
         int status = connection.getResponseCode();
         if (status >= 200 && status < 300) {
             try (var in = connection.getInputStream()) {
-                Type listType = new TypeToken<List<Map<String, Object>>>() {}.getType();
-                Map<String, List<Map<String, Object>>> response = new Gson().fromJson(new InputStreamReader(in), listType);
-                return response.get("games");
+                // Expect an object with a "games" field containing the array
+                Type mapType = new TypeToken<Map<String, Object>>(){}.getType();
+                Map<String, Object> response = new Gson().fromJson(new InputStreamReader(in), mapType);
+                // Extract the "games" array and convert to List<Map>
+                if (response.containsKey("games")) {
+                    return (List<Map<String, Object>>) response.get("games");
+                }
+                return new ArrayList<>(); // Return empty list if no games
             }
         } else {
             try (var in = connection.getErrorStream()) {
