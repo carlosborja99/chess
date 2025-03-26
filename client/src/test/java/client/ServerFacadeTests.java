@@ -34,7 +34,9 @@ public class ServerFacadeTests {
 
     @BeforeEach
     void clearDB() throws Exception {
-
+        HttpURLConnection connection = newConnection("/db", "DELETE", null);
+        Map<String, Object> result = getResponse(connection);
+        assertTrue(result.containsKey("success") && (Boolean) result.get("success"), "Database clear failed.");
     }
 
     private HttpURLConnection newConnection(String point, String method, String authToken) throws Exception{
@@ -71,6 +73,12 @@ public class ServerFacadeTests {
         assertTrue(((String) authData.get("authToken")).length() > 10);
         assertEquals("player", authData.get("username"));
     }
-    
+
+    @Test
+    void registerDuplicateFailure() throws Exception {
+        facade.register("player", "password", "player");
+        Exception exception = assertThrows(Exception.class, () -> facade.register("player", "newPassword", "newemail@email.com"));
+        assertTrue(exception.getMessage().contains("already"));
+    }
 
 }
