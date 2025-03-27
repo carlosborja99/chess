@@ -110,7 +110,9 @@ public class ChessPiece {
         int[] deltas = {-1, 0, 1};
         for (int rowDelta : deltas){
             for (int colDelta : deltas){
-                if (rowDelta == 0 && colDelta == 0) continue;
+                if (rowDelta == 0 && colDelta == 0){
+                    continue;
+                }
                 ChessPosition newPosition = new ChessPosition(myPosition.getRow() + rowDelta, myPosition.getColumn() + colDelta);
                 if (isValidPosition(newPosition)) {
                     ChessPiece pieceAtNewPosition = board.getPiece(newPosition);
@@ -121,14 +123,11 @@ public class ChessPiece {
             }
         }
     }
+
     private void addRookMove(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves){
-        int[] rowDeltas = {-1, 1};
-        int[] colDeltas = {-1, 1};
-        for (int rowDelta : rowDeltas){
-            addMovesInDirection(board, myPosition, validMoves, rowDelta, 0);
-        }
-        for (int colDelta : colDeltas){
-            addMovesInDirection(board, myPosition, validMoves, 0, colDelta);
+        int[] [] movementOptions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] direction : movementOptions) {
+            addMovesInDirection(board, myPosition, validMoves, direction[0], direction[1]);
         }
     }
     private void addBishopMove(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves){
@@ -154,8 +153,9 @@ public class ChessPiece {
     private void addPawnMove(ChessBoard board, ChessPosition myPosition, List<ChessMove> validMoves) {
         int direction = (this.color == ChessGame.TeamColor.BLACK) ? -1 : 1;
         ChessPosition normalMovement = new ChessPosition(myPosition.getRow() + direction, myPosition.getColumn());
-        if(isValidPosition(normalMovement) && board.getPiece(normalMovement) == null){
-            if (normalMovement.getRow() == (this.color == ChessGame.TeamColor.WHITE ? 8 : 1)){
+        if (isValidPosition(normalMovement) && board.getPiece(normalMovement) == null) {
+            boolean promotionRow = normalMovement.getRow() == (this.color == ChessGame.TeamColor.WHITE ? 8 : 1);
+            if (promotionRow){
                 validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.QUEEN));
                 validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.BISHOP));
                 validMoves.add(new ChessMove(myPosition, normalMovement, PieceType.ROOK));
