@@ -66,9 +66,9 @@ public class UserServiceTest {
     void logout() throws DataAccessException {
         var registerRequest = new UserService.RegisterRequest("user1", "pass", "email@example.com");
         var registerResult = userService.register(registerRequest);
-        String AuthorizationToken = registerResult.authToken();
-        assertNotNull(dataInMemory.getAuthorization(AuthorizationToken));
-        var logoutRequest = new UserService.LogoutRequest(AuthorizationToken);
+        String authorizationToken = registerResult.authToken();
+        assertNotNull(dataInMemory.getAuthorization(authorizationToken));
+        var logoutRequest = new UserService.LogoutRequest(authorizationToken);
         assertDoesNotThrow(() -> userService.logout(logoutRequest));
         assertThrows(DataAccessException.class, () -> userService.logout(logoutRequest));
     }
