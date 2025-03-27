@@ -52,7 +52,9 @@ public class ChessGame {
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         ChessPiece piece = board.getPiece(startPosition);
-        if (piece == null) return null;
+        if (piece == null){
+            return null;
+        }
         Collection<ChessMove> canMove = piece.pieceMoves(board, startPosition);
         Collection<ChessMove> realMoves = new ArrayList<>();
         for(ChessMove movement : canMove){
@@ -80,7 +82,9 @@ public class ChessGame {
         ChessPosition end = move.getEndPosition();
         ChessPiece piece = board.getPiece(start);
 
-        if (piece == null) throw new InvalidMoveException("No piece at the starting position");
+        if (piece == null){
+            throw new InvalidMoveException("No piece at the starting position");
+        }
         if(!piece.getTeamColor().equals(turnTeam)){
             throw new InvalidMoveException("It's not your turn");
         }
@@ -124,7 +128,9 @@ public class ChessGame {
             ChessPiece piece = entry.getValue();
             if (piece != null && piece.getTeamColor() == opponentTeam){
                 for (ChessMove movement : piece.pieceMoves(board, entry.getKey())){
-                    if (movement.getEndPosition().equals(whereIsTheKing)) return true;
+                    if (movement.getEndPosition().equals(whereIsTheKing)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -180,7 +186,9 @@ public class ChessGame {
             ChessPosition inTheStart = entry.getKey();
             if(piece != null && piece.getTeamColor() == teamColor){
                 Collection<ChessMove> realMoves = validMoves(inTheStart);
-                if(!realMoves.isEmpty()) return false;
+                if(!realMoves.isEmpty()) {
+                    return false;
+                }
             }
         }
         return true;

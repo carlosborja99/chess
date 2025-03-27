@@ -121,27 +121,11 @@ public class ServerFacade {
 
     private Map<String, Object> response(HttpURLConnection http) throws Exception{
         http.connect();
-        int status = http.getResponseCode();
-        if (status < 300 && status >= 200) {
-            try (var in = http.getInputStream()) {
-                if (in.available() == 0) {
-                    return Map.of();
-                }
-                Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
-                Map<String, Object> response = new Gson().fromJson(new InputStreamReader(in), mapType);
-                if (response != null && response.containsKey("authToken")) {
-                    this.authToken = (String) response.get("authToken");
-                }
-                return response != null ? response : Map.of();
-            }
-        } else {
-            try (var in = http.getErrorStream()) {
-                if (in == null){
-                    throw new Exception("Unknown error occurred");
-                }
-                throw new Exception(new Gson().fromJson(new InputStreamReader(in), Map.class).get("message").toString());
-            }
+        Map<String, Object> response = HttpUtils.parseResponse(http);
+        if (response.containsKey("authToken")) {
+            this.authToken = (String) response.get("authToken");
         }
+        return response != null ? response : Map.of();
     }
 
     public String getAuthToken() {

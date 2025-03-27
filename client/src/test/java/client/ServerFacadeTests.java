@@ -51,20 +51,7 @@ public class ServerFacadeTests {
     }
 
     private Map<String, Object> getResponse(HttpURLConnection connection) throws Exception {
-        int status = connection.getResponseCode();
-        if (status >= 200 && status < 300) {
-            try (var in = connection.getInputStream()) {
-                if (in.available() == 0) {
-                    return Map.of();
-                }
-                return new Gson().fromJson(new InputStreamReader(in), new TypeToken<Map<String, Object>>(){}.getType());
-            }
-        } else {
-            try (var in = connection.getErrorStream()) {
-                String error = new Gson().fromJson(new InputStreamReader(in), Map.class).get("message").toString();
-                throw new Exception(error);
-            }
-        }
+        return HttpUtils.parseResponse(connection);
     }
 
     @Test
