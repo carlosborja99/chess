@@ -18,21 +18,21 @@ public class Repl {
         this.facade = new ServerFacade(host);
     }
 
-    public void run(){
-        System.out.println("♕ 240 Chess Client: Welcome!");
+    public void run() {
+        System.out.println("♕ Welcome! to 240 Chess. Type help to get started. ♕");
         while (true){
             try{
                 if (logged){
-                    preLogin();
-                } else{
                     postLogin();
+                } else{
+                    preLogin();
                 }
             } catch (Exception e){
                 System.out.println("Error: " + e.getMessage());
             }
         }
     }
-    private void preLogin() throws Exception{
+    private void preLogin() throws Exception {
         System.out.print(">>> ");
         String[] input = scanner.nextLine().split("\\s+");
         String command = input[0].toLowerCase();
@@ -44,6 +44,7 @@ public class Repl {
                 System.out.println("  quit - Exit the program");
                 System.out.println("  login <username> <password> - Log in to your account");
                 System.out.println("  register <username> <password> <email> - Create a new account");
+                break;
             case "quit":
                 System.out.println("Goodbye!");
                 System.exit(0);
@@ -51,6 +52,7 @@ public class Repl {
             case "register":
                 if(input.length != 4){
                     System.out.println("Usage: register <username> <password> <email>");
+                    break;
                 }
                 Map<String, Object> registerResponse = facade.register(input[1], input[2], input[3]);
                 System.out.println("Registered and logged in as " + input[1]);
@@ -71,8 +73,8 @@ public class Repl {
                 System.out.println("Unknown command. Type \"help\" for options.");
         }
     }
-    private void postLogin() throws Exception{
-        System.out.print(">>> ");
+    private void postLogin() throws Exception {
+        System.out.print("[LOGGED_IN] >>> ");
         String[] input = scanner.nextLine().split("\\s+");
         String command = input[0].toLowerCase();
         switch (command){
@@ -143,6 +145,7 @@ public class Repl {
                     System.out.println("Invalid game number.");
                     break;
                 }
+                break;
             default:
                 System.out.println("Unknown command. Type \"help\" for options.");
 
