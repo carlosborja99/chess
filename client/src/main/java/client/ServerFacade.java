@@ -9,8 +9,9 @@ import java.util.*;
 
 
 public class ServerFacade {
-    final String serverURL;
-    String authToken;
+    private final String serverURL;
+    private String authToken;
+    private final Gson gson = new Gson();
 
     public ServerFacade(String serverURL) {
         this.serverURL = serverURL;

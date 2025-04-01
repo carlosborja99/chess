@@ -33,17 +33,17 @@ public class Repl {
         }
     }
     private void preLogin() throws Exception {
-        System.out.print(">>> ");
+        System.out.print(">>> [LOGGED_OUT]");
         String[] input = scanner.nextLine().split("\\s+");
         String command = input[0].toLowerCase();
 
         switch (command){
             case "help":
                 System.out.println("Available commands:");
-                System.out.println("  help - Display this help text");
-                System.out.println("  quit - Exit the program");
                 System.out.println("  login <username> <password> - Log in to your account");
-                System.out.println("  register <username> <password> <email> - Create a new account");
+                System.out.println("  register <username> <password> <email> - to create an account");
+                System.out.println("  quit - Exit the program");
+                System.out.println("  help - with possible commands");
                 break;
             case "quit":
                 System.out.println("Goodbye!");
@@ -80,9 +80,9 @@ public class Repl {
         switch (command){
             case "help":
                 System.out.println("Available commands:");
+                System.out.println("  create <gameName> - Create a new game");
                 System.out.println("  help - Display this help text");
                 System.out.println("  logout - Log out of your account");
-                System.out.println("  create <gameName> - Create a new game");
                 System.out.println("  list - List all existing games");
                 System.out.println("  play <gameNumber> <color> - Join a game as WHITE or BLACK");
                 System.out.println("  observe <gameNumber> - Observe a game");
