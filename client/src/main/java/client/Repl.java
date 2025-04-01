@@ -33,7 +33,7 @@ public class Repl {
         }
     }
     private void preLogin() throws Exception {
-        System.out.print(">>> [LOGGED_OUT]");
+        System.out.print("[LOGGED_OUT] >>> ");
         String[] input = scanner.nextLine().split("\\s+");
         String command = input[0].toLowerCase();
 
