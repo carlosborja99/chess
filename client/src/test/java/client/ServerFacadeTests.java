@@ -41,7 +41,7 @@ public class ServerFacadeTests {
     }
 
     private HttpURLConnection newConnection(String point, String method, String authToken) throws Exception{
-        URI uri = new URI(facade.serverURL + point);
+        URI uri = new URI(facade.getServerURL() + point);
         HttpURLConnection connect = (HttpURLConnection) uri.toURL().openConnection();
         connect.setRequestMethod(method);
         if (authToken != null) {

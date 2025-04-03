@@ -12,11 +12,13 @@ public class ServerFacade {
     private final String serverURL;
     private String authToken;
     private final Gson gson = new Gson();
-
+/// get server url
     public ServerFacade(String serverURL) {
         this.serverURL = serverURL;
     }
-
+    public String getServerURL(){
+        return serverURL;
+    }
     public ServerFacade(int port) {
         this("http://localhost:" + port + "/");
     }
@@ -92,5 +94,9 @@ public class ServerFacade {
         String requestBody = gson.toJson(Map.of("gameID", gameID, "playerColor", playerColor));
         httpURLConnection.getOutputStream().write(requestBody.getBytes());
         return HttpUtils.parseResponse(httpURLConnection);
+    }
+
+    public String getAuthToken(){
+        return  authToken;
     }
 }
