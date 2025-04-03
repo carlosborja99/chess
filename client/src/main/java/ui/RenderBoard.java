@@ -22,14 +22,14 @@ public class RenderBoard {
         char endCol = whitePerspective ? 'i' : '`'; // '`'Is past 'a'
         int colStep = whitePerspective ? 1 : -1;
 
-        System.out.print(" ");
+        System.out.print("   ");
         for (char i = startCol; i != endCol; i += colStep) {
-            System.out.print(" " + i + " ");
+            System.out.print(" " + i + "  ");
         }
         System.out.println();
 
         for (int row = startRow; row != endRow; row += rowStep) {
-            System.out.print(row + " ");
+            System.out.print(row + "  ");
             for (int col = 1; col <= 8; col++) {
                 int adjustedCol = whitePerspective ? col : 9 - col;
                 ChessPosition position = new ChessPosition(row, adjustedCol);
@@ -42,9 +42,9 @@ public class RenderBoard {
             System.out.print(EscapeSequences.RESET_BG_COLOR + " " + row);
             System.out.println();
         }
-        System.out.print(" ");
+        System.out.print("   ");
         for (char i = startCol; i != endCol; i += colStep) {
-            System.out.print(" " + i + " ");
+            System.out.print(" " + i + "  ");
         }
         System.out.println();
     }
@@ -57,21 +57,22 @@ public class RenderBoard {
         ChessPiece.PieceType pieceType = piece.getPieceType();
         if (teamColor == ChessGame.TeamColor.BLACK) {
             return switch (pieceType) {
-                case KING -> EscapeSequences.BLACK_KING;
-                case QUEEN -> EscapeSequences.BLACK_QUEEN;
-                case KNIGHT -> EscapeSequences.BLACK_KNIGHT;
-                case BISHOP -> EscapeSequences.BLACK_BISHOP;
-                case ROOK -> EscapeSequences.BLACK_ROOK;
-                case PAWN -> EscapeSequences.BLACK_PAWN;
-            };
-        } else {
-            return switch (pieceType){
                 case KING -> EscapeSequences.WHITE_KING;
                 case QUEEN -> EscapeSequences.WHITE_QUEEN;
                 case KNIGHT -> EscapeSequences.WHITE_KNIGHT;
                 case BISHOP -> EscapeSequences.WHITE_BISHOP;
                 case ROOK -> EscapeSequences.WHITE_ROOK;
                 case PAWN -> EscapeSequences.WHITE_PAWN;
+            };
+        } else {
+            return switch (pieceType){
+                case KING -> EscapeSequences.BLACK_KING;
+                case QUEEN -> EscapeSequences.BLACK_QUEEN;
+                case KNIGHT -> EscapeSequences.BLACK_KNIGHT;
+                case BISHOP -> EscapeSequences.BLACK_BISHOP;
+                case ROOK -> EscapeSequences.BLACK_ROOK;
+                case PAWN -> EscapeSequences.BLACK_PAWN;
+
             };
         }
     }

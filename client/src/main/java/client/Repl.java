@@ -109,12 +109,12 @@ public class Repl {
                         Map<String, Object> game = games.get(i);
                         String gameID = game.get("gameID").toString();
                         String gameName = game.get("gameName").toString();
-                        String whitePlayer = game.get("whiteUsername").toString();
-                        String blackPlayer = game.get("blackUsername").toString();
+                        String whitePlayer = game.get("whiteUsername") != null ? game.get("whiteUsername").toString() : "None";
+                        String blackPlayer = game.get("blackUsername") != null ? game.get("blackUsername").toString() : "None";
                         int num = i + 1;
                         gameNumberToID.put(num, gameID);
                         System.out.printf("%d. %s [White: %s] [Black: %s]%n",
-                                num, gameName, whitePlayer != null ? whitePlayer : "None", blackPlayer != null ? blackPlayer : "None");
+                                num, gameName, whitePlayer, blackPlayer);
                     }
                 }
                 break;
@@ -144,6 +144,8 @@ public class Repl {
                     System.out.println("Invalid game number.");
                     break;
                 }
+                System.out.println("Observing game " + observeNum);
+                new RenderBoard().render(true);
                 break;
             default:
                 System.out.println("Unknown command. Type \"help\" for options.");
