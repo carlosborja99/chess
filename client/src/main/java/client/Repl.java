@@ -39,11 +39,10 @@ public class Repl {
 
         switch (command){
             case "help":
-                System.out.println("Available commands:");
-                System.out.println("  login <username> <password> - Log in to your account");
-                System.out.println("  register <username> <password> <email> - to create an account");
-                System.out.println("  quit - Exit the program");
-                System.out.println("  help - with possible commands");
+                System.out.println("  register <USERNAME> <PASSWORD> <EMAIL> - to create an account");
+                System.out.println("  login <USERNAME> <PASSWORD> - to play chess");
+                System.out.println("  quit - playing chess");
+                System.out.println("  help - with possible commands\n");
                 break;
             case "quit":
                 System.out.println("Goodbye!");
@@ -51,7 +50,7 @@ public class Repl {
                 break;
             case "register":
                 if(input.length != 4){
-                    System.out.println("Usage: register <username> <password> <email>");
+                    System.out.println("Usage: register <USERNAME> <PASSWORD> <EMAIL> - to create an account");
                     break;
                 }
                 Map<String, Object> registerResponse = facade.register(input[1], input[2], input[3]);
@@ -60,7 +59,7 @@ public class Repl {
                 break;
             case "login":
                 if(input.length != 3){
-                    System.out.println("Usage: login <username> <password>");
+                    System.out.println("Usage: login <USERNAME> <PASSWORD> - to play chess");
                     break;
                 }
                 Map<String, Object> loginResponse = facade.login(input[1], input[2]);
@@ -80,12 +79,12 @@ public class Repl {
         switch (command){
             case "help":
                 System.out.println("Available commands:");
-                System.out.println("  create <gameName> - Create a new game");
-                System.out.println("  help - Display this help text");
-                System.out.println("  logout - Log out of your account");
-                System.out.println("  list - List all existing games");
-                System.out.println("  play <gameNumber> <color> - Join a game as WHITE or BLACK");
-                System.out.println("  observe <gameNumber> - Observe a game");
+                System.out.println("  create <NAME> - a game");
+                System.out.println("  list - games");
+                System.out.println("  join <ID> <WHITE|BLACK> - a game");
+                System.out.println("  observe <ID> - a game");
+                System.out.println("  logout - when you are done");
+                System.out.println("  help - with possible commands\n");
                 break;
             case "logout":
                 facade.logout();
@@ -94,7 +93,7 @@ public class Repl {
                 break;
             case "create":
                 if(input.length != 2){
-                    System.out.println("Usage: create <gameName>");
+                    System.out.println("Usage: create <NAME>");
                     break;
                 }
                 facade.createMyGame(input[1]);
@@ -119,9 +118,9 @@ public class Repl {
                     }
                 }
                 break;
-            case "play":
+            case "join":
                 if(input.length != 3 || (!input[2].equalsIgnoreCase("WHITE") && !input[2].equalsIgnoreCase("BLACK"))){
-                    System.out.println("Usage: play <gameNumber> <WHITE|BLACK>");
+                    System.out.println("Usage: join <ID> <WHITE|BLACK>");
                     break;
                 }
                 int playNum = Integer.parseInt(input[1]);
@@ -136,7 +135,7 @@ public class Repl {
                 break;
             case "observe":
                 if(input.length != 2){
-                    System.out.println("Usage: observe <gameNumber>");
+                    System.out.println("Usage: observe <ID>");
                     break;
                 }
                 int observeNum = Integer.parseInt(input[1]);
