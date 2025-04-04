@@ -34,8 +34,8 @@ public class RenderBoard {
                 int adjustedCol = whitePerspective ? col : 9 - col;
                 ChessPosition position = new ChessPosition(row, adjustedCol);
                 ChessPiece piece = board.getPiece(position);
-                String bgColor = (row + col) % 2 == 0 ?
-                        EscapeSequences.SET_BG_COLOR_LIGHT_GREY : EscapeSequences.SET_BG_COLOR_DARK_GREY;
+                String bgColor = (row + adjustedCol) % 2 == 0 ?
+                        EscapeSequences.SET_BG_COLOR_DARK_GREY : EscapeSequences.SET_BG_COLOR_LIGHT_GREY;
                 System.out.print(bgColor);
                 System.out.print(getPieceString(piece));
             }
