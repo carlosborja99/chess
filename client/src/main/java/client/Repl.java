@@ -1,11 +1,18 @@
 package client;
 
 import chess.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import ui.RenderBoard;
 
+import javax.websocket.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Repl {
@@ -13,9 +20,40 @@ public class Repl {
     private boolean logged = false;
     private Map<Integer, String> gameNumberToID = new HashMap<>();
     private final Scanner scanner = new Scanner(System.in);
+    private Session websocketSession;
+    private String currentGameID;
+    private ChessGame.TeamColor playerColor;
+    private ChessBoard currentBoard;
+    private RenderBoard boardRender = new RenderBoard();
+    private String username;
+    private boolean observe = false;
 
     public Repl(String host) {
         this.facade = new ServerFacade(host);
+    }
+
+    @OnOpen
+    public void onOpen(Session session) {
+        System.out.println("[Now connected to websocket] Session ID: " + session.getId());
+        this.websocketSession = session;
+    }
+
+    @OnMessage
+    public void onMessage(String message) {
+        Gson gson = new Gson();
+        JsonObject jsonMessage = gson.fromJson(message, JsonObject.class);
+        if (jsonMessage.has("type")) {
+            String tipo = jsonMessage.get("type").getAsString();
+            JsonObject data = jsonMessage.getAsJsonObject("data");
+            switch (tipo) {
+                case "boardUpdate":
+                    String boardFen = data.get("board").getAsString();
+                    currentBoard = FenUtility.FENtoBoard(boardFen);
+                    break;
+            }
+
+
+        }
     }
 
     public void run() {
@@ -131,6 +169,10 @@ public class Repl {
                 }
                 facade.joinGame(gameID, input[2].toUpperCase());
                 System.out.println("Joined game as " + input[2]);
+                playerColor = input[2].equalsIgnoreCase("WHITE") ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+                currentGameID = gameID;
+                observe = false;
+                connectWebSocket(); // Initiate WebSocket connection after joining
                 new RenderBoard().render(input[2].equalsIgnoreCase("WHITE"));
                 break;
             case "observe":
@@ -145,11 +187,24 @@ public class Repl {
                     break;
                 }
                 System.out.println("Observing game " + observeNum);
-                new RenderBoard().render(true);
+                currentGameID = gameIDObserve;
+                observe = true;
+                connectWebSocket(); // Initiate WebSocket connection after observing
+                boardRender.render(true); // Observer always sees from white's perspective initially
                 break;
             default:
                 System.out.println("Unknown command. Type \"help\" for options.");
 
+        }
+    }
+
+    private void connectWebSocket() {
+        ClientEndpointConfig cec = ClientEndpointConfig.Builder.create().build();
+        try {
+            ClientManager client = ClientManager.createClient();
+            client.connectToServer(this, new URI(facade.getHost() + "/ws"));
+        } catch (DeploymentException | IOException | URISyntaxException e) {
+            System.err.println("Error connecting to WebSocket: " + e.getMessage());
         }
     }
 }
