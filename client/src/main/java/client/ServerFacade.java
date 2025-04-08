@@ -12,7 +12,6 @@ public class ServerFacade {
     private final String serverURL;
     private String authToken;
     private final Gson gson = new Gson();
-/// get server url
     public ServerFacade(String serverURL) {
         this.serverURL = serverURL;
     }
@@ -98,5 +97,9 @@ public class ServerFacade {
 
     public String getAuthToken(){
         return  authToken;
+    }
+
+    public String getHost() {
+        return null;
     }
 }

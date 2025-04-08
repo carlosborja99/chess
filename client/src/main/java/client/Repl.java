@@ -3,7 +3,9 @@ package client;
 import chess.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import org.glassfish.tyrus.client.ClientManager;
 import ui.RenderBoard;
+import websocket.commands.UserGameCommand;
 
 import javax.websocket.*;
 import java.io.IOException;
@@ -27,6 +29,7 @@ public class Repl {
     private RenderBoard boardRender = new RenderBoard();
     private String username;
     private boolean observe = false;
+    private Gson gson = new Gson();
 
     public Repl(String host) {
         this.facade = new ServerFacade(host);
@@ -36,6 +39,7 @@ public class Repl {
     public void onOpen(Session session) {
         System.out.println("[Now connected to websocket] Session ID: " + session.getId());
         this.websocketSession = session;
+        sendConnectCommand();
     }
 
     @OnMessage
@@ -205,6 +209,26 @@ public class Repl {
             client.connectToServer(this, new URI(facade.getHost() + "/ws"));
         } catch (DeploymentException | IOException | URISyntaxException e) {
             System.err.println("Error connecting to WebSocket: " + e.getMessage());
+        }
+    }
+
+    private void sendConnectCommand(UserGameCommand.CommandType tipo) {
+        if (websocketSession != null && websocketSession.isOpen() && logged && currentGameID != null) {
+            UserGameCommand command = new UserGameCommand(
+                    tipo,
+                    facade.getAuthToken(),
+                    Integer.parseInt(currentGameID)
+            );
+            String jsonCommand = gson.toJson(command);
+            try {
+                websocketSession.getBasicRemote().sendText(jsonCommand);
+                System.out.println("Sent " + tipo + "command.");
+
+            } catch (IOException e){
+                System.out.println("Error sending " + tipo + "command: " + e.getMessage());
+            }
+        } else {
+            System.err.println("Not connected via WebSocket or you are not logged in.");
         }
     }
 }
