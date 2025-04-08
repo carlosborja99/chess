@@ -105,7 +105,16 @@ public class Repl {
     }
 
 
+    @OnError
+    public void onError(Session session, Throwable throwable) {
+        System.err.println("[WebSocket Error] Session ID: " + session.getId() + " Error: " + throwable.getMessage());
+    }
 
+    @OnClose
+    public void onClose(Session session, CloseReason closeReason) {
+        System.out.println("[WebSocket Closed] Session ID: " + session.getId() + " Reason: " + closeReason.getReasonPhrase());
+        websocketSession = null;
+    }
 
     public void run() {
         System.out.println("♕ Welcome! to 240 Chess. Type help to get started. ♕");
@@ -126,7 +135,7 @@ public class Repl {
         String[] input = scanner.nextLine().split("\\s+");
         String command = input[0].toLowerCase();
 
-        switch (command){
+        switch (command) {
             case "help":
                 System.out.println("  register <USERNAME> <PASSWORD> <EMAIL> - to create an account");
                 System.out.println("  login <USERNAME> <PASSWORD> - to play chess");
@@ -138,12 +147,13 @@ public class Repl {
                 System.exit(0);
                 break;
             case "register":
-                if(input.length != 4){
+                if (input.length != 4) {
                     System.out.println("Usage: register <USERNAME> <PASSWORD> <EMAIL> - to create an account");
                     break;
                 }
                 Map<String, Object> registerResponse = facade.register(input[1], input[2], input[3]);
                 System.out.println("Registered and logged in as " + input[1]);
+                username = input[1];
                 logged = true;
                 break;
             case "login":
@@ -154,6 +164,7 @@ public class Repl {
                 Map<String, Object> loginResponse = facade.login(input[1], input[2]);
                 System.out.println("Logged in as " + input[1]);
                 logged = true;
+                username = input[1];
                 break;
             case "logout":
                 break;
@@ -172,6 +183,9 @@ public class Repl {
                 System.out.println("  list - games");
                 System.out.println("  join <ID> <WHITE|BLACK> - a game");
                 System.out.println("  observe <ID> - a game");
+                System.out.println("  move <start> <end> - make a move (e.g., a2 a4)");
+                System.out.println("  leave - the current game");
+                System.out.println("  resign - the current game");
                 System.out.println("  logout - when you are done");
                 System.out.println("  help - with possible commands\n");
                 break;
@@ -179,6 +193,13 @@ public class Repl {
                 facade.logout();
                 System.out.println("Logged out.");
                 logged = false;
+                currentGameID = null;
+                playerColor = null;
+                observe = false;
+                if (websocketSession.isOpen() && websocketSession != null) {
+                    websocketSession.close();
+                    websocketSession = null;
+                }
                 break;
             case "create":
                 if(input.length != 2){
@@ -224,7 +245,7 @@ public class Repl {
                 currentGameID = gameID;
                 observe = false;
                 connectWebSocket(); // Initiate WebSocket connection after joining
-                new RenderBoard().render(input[2].equalsIgnoreCase("WHITE"));
+//                new RenderBoard().render(input[2].equalsIgnoreCase("WHITE"));
                 break;
             case "observe":
                 if(input.length != 2){
@@ -240,9 +261,23 @@ public class Repl {
                 System.out.println("Observing game " + observeNum);
                 currentGameID = gameIDObserve;
                 observe = true;
-                connectWebSocket(); // Initiate WebSocket connection after observing
+                connectWebSocket();
                 boardRender.render(true); // Observer always sees from white's perspective initially
                 break;
+            case "move":
+                if(input.length != 3){
+                    System.out.println("Usage: move <start_square> <end_square>");
+                    break;
+                }
+                if (currentGameID != null && websocketSession.isOpen() && websocketSession != null) {
+                    try {
+                        ChessPosition startPosition = notationToPosition(input[1]);
+                        ChessPosition endPosition = notationToPosition(input[2]);
+                        if (startPosition != null && endPosition != null){
+
+                        }
+                    }
+                }
             default:
                 System.out.println("Unknown command. Type \"help\" for options.");
 
@@ -274,5 +309,19 @@ public class Repl {
                 System.err.println("Error sending CONNECT message: " + e.getMessage());
             }
         }
+    }
+
+    private ChessPosition notationToPosition(String notation) {
+        if (notation.length() != 2) {
+            return null;
+        }
+        char fileCharacter = notation.charAt(0);
+        char rankCharacter = notation.charAt(1);
+        if (rankCharacter >= '1' && rankCharacter <= '8' && fileCharacter >= 'a' && fileCharacter <= 'h'){
+            int column = fileCharacter - 'a';
+            int row = Integer.parseInt(String.valueOf(rankCharacter)) - 1;
+            return new ChessPosition(row + 1, column + 1);
+        }
+        return null;
     }
 }
