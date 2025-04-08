@@ -11,7 +11,23 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import ui.RenderBoard;
+import websocket.commands.UserGameCommand;
+
+import javax.websocket.*;
+import javax.websocket.ClientEndpoint;
+import javax.websocket.ClientEndpointConfig;
+import javax.websocket.MessageHandler;
+import javax.websocket.Session;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,19 +62,50 @@ public class Repl {
     public void onMessage(String message) {
         Gson gson = new Gson();
         JsonObject jsonMessage = gson.fromJson(message, JsonObject.class);
-        if (jsonMessage.has("type")) {
-            String tipo = jsonMessage.get("type").getAsString();
+        if (jsonMessage.has("serverMessageType")) {
+            String tipe = jsonMessage.get("serverMessageType").getAsString();
             JsonObject data = jsonMessage.getAsJsonObject("data");
-            switch (tipo) {
-                case "boardUpdate":
-                    String boardFen = data.get("board").getAsString();
-                    currentBoard = FenUtility.FENtoBoard(boardFen);
+            switch (tipe) {
+                case "LOAD_GAME":
+                    if (data.has("game")) {
+                        JsonObject gameData = data.getAsJsonObject("game");
+                        String boardPlay = gameData.has("board") ? gameData.get("board").getAsString() : null;
+                        if (boardPlay != null) {
+                            currentBoard = FenUtility.FENtoBoard(boardPlay);
+                            boardRender.render(playerColor == ChessGame.TeamColor.WHITE || observe, currentBoard);
+                        } else {
+                            System.out.println("LOAD_GAME received without board information.");
+                            System.out.println("Raw message: " + message);
+                        }
+                    } else {
+                        System.out.println("LOAD_GAME received without game data.");
+                        System.out.println("Raw message: " + message);
+                    }
                     break;
+                case "ERROR":
+                    if (data.has("errorMessage")) {
+                        String errorMessage = data.get("errorMessage").getAsString();
+                        System.err.println("Server Error: " + errorMessage);
+                    }
+                    break;
+                case "NOTIFICATION":
+                    if (data.has("message")) {
+                        String notificationMessage = data.get("message").getAsString();
+                        System.out.println("Notification: " + notificationMessage);
+                    }
+                    break;
+                default:
+                    System.out.println("Received unknown server message type: " + tipe);
+                    System.out.println("Raw message: " + message);
             }
-
-
+        } else {
+            System.out.println("Received message without serverMessageType: " + message);
         }
+
     }
+
+
+
 
     public void run() {
         System.out.println("♕ Welcome! to 240 Chess. Type help to get started. ♕");
@@ -212,23 +259,20 @@ public class Repl {
         }
     }
 
-    private void sendConnectCommand(UserGameCommand.CommandType tipo) {
+    private void sendConnectCommand() {
         if (websocketSession != null && websocketSession.isOpen() && logged && currentGameID != null) {
             UserGameCommand command = new UserGameCommand(
-                    tipo,
+                    UserGameCommand.CommandType.CONNECT,
                     facade.getAuthToken(),
                     Integer.parseInt(currentGameID)
             );
             String jsonCommand = gson.toJson(command);
             try {
                 websocketSession.getBasicRemote().sendText(jsonCommand);
-                System.out.println("Sent " + tipo + "command.");
-
-            } catch (IOException e){
-                System.out.println("Error sending " + tipo + "command: " + e.getMessage());
+                System.out.println("Sent CONNECT message.");
+            } catch (IOException e) {
+                System.err.println("Error sending CONNECT message: " + e.getMessage());
             }
-        } else {
-            System.err.println("Not connected via WebSocket or you are not logged in.");
         }
     }
 }
