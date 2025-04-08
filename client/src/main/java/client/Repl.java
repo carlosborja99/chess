@@ -274,10 +274,54 @@ public class Repl {
                         ChessPosition startPosition = notationToPosition(input[1]);
                         ChessPosition endPosition = notationToPosition(input[2]);
                         if (startPosition != null && endPosition != null){
-
+                            ChessMove move = new ChessMove(startPosition, endPosition, null);
+                            UserGameCommand makeMoveCommand = new UserGameCommand(
+                                    UserGameCommand.CommandType.MAKE_MOVE,
+                                    facade.getAuthToken(),
+                                    Integer.parseInt(currentGameID)
+                            );
+                            Map<String, Object> moveData = new HashMap<>();
+                            moveData.put("start", positionToObject(startPosition));
+                            moveData.put("end", positionToObject(endPosition));
+                            JsonObject jsonCommand = new JsonObject();
+                            jsonCommand.addProperty("commandType", "MAKE_MOVE");
+                            jsonCommand.addProperty("authToken", facade.getAuthToken());
+                            jsonCommand.addProperty("gameID", currentGameID);
+                            jsonCommand.add("move", gson.toJsonTree(moveData));
+                            websocketSession.getBasicRemote().sendText(gson.toJson(jsonCommand));
+                            System.out.println("Sent move: " + input[1] + " to " + input[2]);
+                        } else {
+                            System.out.println("Invalid move notation!");
                         }
+                    } catch (IOException e) {
+                        System.err.println("Error sending move: " + e.getMessage());
                     }
+                } else {
+                    System.out.println("Not connected via WebSocket");
                 }
+                break;
+            case "leave":
+                if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
+                    sendWebSocketCommand(UserGameCommand.CommandType.LEAVE);
+                    currentGameID = null;
+                    playerColor = null;
+                    observe = false;
+                    System.out.println("Left the game");
+                } else{
+                    System.out.println("No game to leave");
+                }
+                break;
+            case "resign":
+                if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
+                    sendWebSocketCommand(UserGameCommand.CommandType.RESIGN);
+                    System.out.println("Resigned from game");
+                    currentGameID = null;
+                    playerColor = null;
+                    observe = false;
+                } else{
+                    System.out.println("No game to resign from");
+                }
+                break;
             default:
                 System.out.println("Unknown command. Type \"help\" for options.");
 
@@ -323,5 +367,31 @@ public class Repl {
             return new ChessPosition(row + 1, column + 1);
         }
         return null;
+    }
+
+    private Map<String, Integer> positionToObject(ChessPosition position) {
+        Map<String, Integer> object = new HashMap<>();
+        object.put("row", position.getRow());
+        object.put("col", position.getColumn());
+        return object;
+    }
+
+    private void sendWebSocketCommand(UserGameCommand.CommandType type) {
+        if (websocketSession != null && websocketSession.isOpen() && logged && currentGameID != null) {
+            UserGameCommand command = new UserGameCommand(
+                    type,
+                    facade.getAuthToken(),
+                    Integer.parseInt(currentGameID)
+            );
+            String jsonCommand = gson.toJson(command);
+            try {
+                websocketSession.getBasicRemote().sendText(jsonCommand);
+                System.out.println("Sent " + type + " command.");
+            } catch (IOException e) {
+                System.err.println("Error sending " + type + " command: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Not not logged in or not connected to a game via WebSocket.");
+        }
     }
 }
