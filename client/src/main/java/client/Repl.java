@@ -15,24 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import ui.RenderBoard;
-import websocket.commands.UserGameCommand;
 
-import javax.websocket.*;
-import javax.websocket.ClientEndpoint;
-import javax.websocket.ClientEndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.Session;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-
+@ClientEndpoint
 public class Repl {
     private final ServerFacade facade;
     private boolean logged = false;
@@ -46,6 +30,7 @@ public class Repl {
     private String username;
     private boolean observe = false;
     private Gson gson = new Gson();
+    private Map<String, ChessPosition> highlightedMoves = new HashMap<>();
 
     public Repl(String host) {
         this.facade = new ServerFacade(host);
@@ -63,16 +48,21 @@ public class Repl {
         Gson gson = new Gson();
         JsonObject jsonMessage = gson.fromJson(message, JsonObject.class);
         if (jsonMessage.has("serverMessageType")) {
-            String tipe = jsonMessage.get("serverMessageType").getAsString();
+            String type = jsonMessage.get("serverMessageType").getAsString();
             JsonObject data = jsonMessage.getAsJsonObject("data");
-            switch (tipe) {
+            switch (type) {
                 case "LOAD_GAME":
                     if (data.has("game")) {
                         JsonObject gameData = data.getAsJsonObject("game");
                         String boardPlay = gameData.has("board") ? gameData.get("board").getAsString() : null;
                         if (boardPlay != null) {
-                            currentBoard = FenUtility.FENtoBoard(boardPlay);
-                            boardRender.render(playerColor == ChessGame.TeamColor.WHITE || observe, currentBoard);
+                            try{
+                                currentBoard = FenUtility.FENtoBoard(boardPlay);
+                                boardRender.render(playerColor == ChessGame.TeamColor.WHITE || observe);
+                            } catch (Exception e) {
+                                System.err.println("Error parsing FEN: " + e.getMessage());
+                                System.err.println("Raw FEN: " + boardPlay);
+                            }
                         } else {
                             System.out.println("LOAD_GAME received without board information.");
                             System.out.println("Raw message: " + message);
@@ -95,7 +85,7 @@ public class Repl {
                     }
                     break;
                 default:
-                    System.out.println("Received unknown server message type: " + tipe);
+                    System.out.println("Received unknown server message type: " + type);
                     System.out.println("Raw message: " + message);
             }
         } else {
@@ -130,6 +120,7 @@ public class Repl {
             }
         }
     }
+
     private void preLogin() throws Exception {
         System.out.print("[LOGGED_OUT] >>> ");
         String[] input = scanner.nextLine().split("\\s+");
@@ -173,21 +164,28 @@ public class Repl {
         }
     }
     private void postLogin() throws Exception {
-        System.out.print("[LOGGED_IN] >>> ");
+        System.out.print(currentGameID == null ? "[LOGGED_IN] >>> " : "[IN_GAME] >>> ");
         String[] input = scanner.nextLine().split("\\s+");
         String command = input[0].toLowerCase();
         switch (command){
             case "help":
-                System.out.println("Available commands:");
-                System.out.println("  create <NAME> - a game");
-                System.out.println("  list - games");
-                System.out.println("  join <ID> <WHITE|BLACK> - a game");
-                System.out.println("  observe <ID> - a game");
-                System.out.println("  move <start> <end> - make a move (e.g., a2 a4)");
-                System.out.println("  leave - the current game");
-                System.out.println("  resign - the current game");
-                System.out.println("  logout - when you are done");
-                System.out.println("  help - with possible commands\n");
+                if (currentGameID == null){
+                    System.out.println("Available commands:");
+                    System.out.println("  create <NAME> - a game");
+                    System.out.println("  list - games");
+                    System.out.println("  join <ID> <WHITE|BLACK> - a game");
+                    System.out.println("  observe <ID> - a game");
+                    System.out.println("  logout - when you are done");
+                    System.out.println("  help - with possible commands\n");
+                } else {
+                    System.out.println("Available commands:");
+                    System.out.println("  redraw - the chess board:");
+                    System.out.println("  move <start> <end> - make a move (e.g., a2 a4)");
+                    System.out.println("  leave - the current game");
+                    System.out.println("  resign - the current game");
+                    System.out.println("  highlight - the legal moves for a piece");
+                    System.out.println("  help - with possible commands\n");
+                }
                 break;
             case "logout":
                 facade.logout();
@@ -196,6 +194,7 @@ public class Repl {
                 currentGameID = null;
                 playerColor = null;
                 observe = false;
+                highlightedMoves.clear();
                 if (websocketSession.isOpen() && websocketSession != null) {
                     websocketSession.close();
                     websocketSession = null;
@@ -244,6 +243,7 @@ public class Repl {
                 playerColor = input[2].equalsIgnoreCase("WHITE") ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
                 currentGameID = gameID;
                 observe = false;
+                highlightedMoves.clear();
                 connectWebSocket(); // Initiate WebSocket connection after joining
 //                new RenderBoard().render(input[2].equalsIgnoreCase("WHITE"));
                 break;
@@ -261,9 +261,18 @@ public class Repl {
                 System.out.println("Observing game " + observeNum);
                 currentGameID = gameIDObserve;
                 observe = true;
+                playerColor = null;
+                highlightedMoves.clear();
                 connectWebSocket();
                 boardRender.render(true); // Observer always sees from white's perspective initially
                 break;
+            case "redraw":
+                if (currentBoard != null) {
+                    boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
+                } else {
+                    System.out.println("No board to redraw.");
+                }
+
             case "move":
                 if(input.length != 3){
                     System.out.println("Usage: move <start_square> <end_square>");

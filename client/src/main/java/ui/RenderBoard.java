@@ -5,6 +5,8 @@ import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
 
+import java.util.Map;
+
 public class RenderBoard {
     private final ChessBoard board;
 
@@ -13,7 +15,7 @@ public class RenderBoard {
         this.board.resetBoard(); //Resets Board to starting position
     }
 
-    public void render(boolean whitePerspective) {
+    public void render(ChessBoard board, boolean whitePerspective, Map<String, ChessPosition> highlightedMoves) {
         System.out.println(EscapeSequences.ERASE_SCREEN); //Clears terminal
         int startRow = whitePerspective ? 8 : 1;
         int endRow = whitePerspective ? 0 : 9;
@@ -36,7 +38,9 @@ public class RenderBoard {
                 ChessPiece piece = board.getPiece(position);
                 String bgColor = (row + adjustedCol) % 2 == 0 ?
                         EscapeSequences.SET_BG_COLOR_DARK_GREY : EscapeSequences.SET_BG_COLOR_LIGHT_GREY;
-                System.out.print(bgColor);
+                String highlightColor = highlightedMoves.containsKey(positionToNotation(position)) ?
+                        EscapeSequences.SET_TEXT_COLOR_GREEN : "";
+                System.out.print(bgColor + highlightColor);
                 System.out.print(getPieceString(piece));
             }
             System.out.print(EscapeSequences.RESET_BG_COLOR + " " + row);
@@ -57,15 +61,6 @@ public class RenderBoard {
         ChessPiece.PieceType pieceType = piece.getPieceType();
         if (teamColor == ChessGame.TeamColor.BLACK) {
             return switch (pieceType) {
-                case KING -> EscapeSequences.WHITE_KING;
-                case QUEEN -> EscapeSequences.WHITE_QUEEN;
-                case KNIGHT -> EscapeSequences.WHITE_KNIGHT;
-                case BISHOP -> EscapeSequences.WHITE_BISHOP;
-                case ROOK -> EscapeSequences.WHITE_ROOK;
-                case PAWN -> EscapeSequences.WHITE_PAWN;
-            };
-        } else {
-            return switch (pieceType){
                 case KING -> EscapeSequences.BLACK_KING;
                 case QUEEN -> EscapeSequences.BLACK_QUEEN;
                 case KNIGHT -> EscapeSequences.BLACK_KNIGHT;
@@ -74,6 +69,21 @@ public class RenderBoard {
                 case PAWN -> EscapeSequences.BLACK_PAWN;
 
             };
+        } else {
+            return switch (pieceType){
+                case KING -> EscapeSequences.WHITE_KING;
+                case QUEEN -> EscapeSequences.WHITE_QUEEN;
+                case KNIGHT -> EscapeSequences.WHITE_KNIGHT;
+                case BISHOP -> EscapeSequences.WHITE_BISHOP;
+                case ROOK -> EscapeSequences.WHITE_ROOK;
+                case PAWN -> EscapeSequences.WHITE_PAWN;
+            };
         }
+    }
+
+    private String positionToNotation(ChessPosition position) {
+        char file = (char) ('a' + position.getColumn() - 1);
+        int rank = position.getRow();
+        return String.valueOf(file) + rank;
     }
 }
