@@ -9,8 +9,7 @@ import websocket.commands.UserGameCommand;
 import websocket.messages.ServerMessage;
 
 import javax.websocket.*;
-import java.import java.io.IOException;
-net.URI;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -44,54 +43,30 @@ public class Repl {
 
     @OnMessage
     public void onMessage(String message) {
-        Gson gson = new Gson();
-        JsonObject jsonMessage = gson.fromJson(message, JsonObject.class);
-        if (jsonMessage.has("serverMessageType")) {
-            String type = jsonMessage.get("serverMessageType").getAsString();
-            JsonObject data = jsonMessage.getAsJsonObject("data");
-            switch (type) {
-                case "LOAD_GAME":
-                    if (data.has("game")) {
-                        JsonObject gameData = data.getAsJsonObject("game");
-                        String boardPlay = gameData.has("board") ? gameData.get("board").getAsString() : null;
-                        if (boardPlay != null) {
-                            try{
-                                boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
-                            } catch (Exception e) {
-                                System.err.println("Error parsing FEN: " + e.getMessage());
-                                System.err.println("Raw FEN: " + boardPlay);
-                            }
-                        } else {
-                            System.out.println("LOAD_GAME received without board information.");
-                            System.out.println("Raw message: " + message);
-                        }
-                    } else {
-                        System.out.println("LOAD_GAME received without game data.");
-                        System.out.println("Raw message: " + message);
+        try {
+            ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
+            switch (serverMessage.getServerMessageType()) {
+                case LOAD_GAME:
+                    LoadGameMessage loadMsg = gson.fromJson(message, LoadGameMessage.class);
+                    if (loadMsg.getGame() != null) {
+                        this.currentBoard = loadMsg.getGame().getBoard();
+                        boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
                     }
                     break;
-                case "ERROR":
-                    if (data.has("errorMessage")) {
-                        String errorMessage = data.get("errorMessage").getAsString();
-                        System.err.println("Server Error: " + errorMessage);
-                    }
+                case ERROR:
+                    ErrorMessage errorMsg = gson.fromJson(message, ErrorMessage.class);
+                    System.err.println("Server Error: " + errorMsg.getErrorMessage());
                     break;
-                case "NOTIFICATION":
-                    if (data.has("message")) {
-                        String notificationMessage = data.get("message").getAsString();
-                        System.out.println("Notification: " + notificationMessage);
-                    }
+                case NOTIFICATION:
+                    NotificationMessage notifMsg = gson.fromJson(message, NotificationMessage.class);
+                    System.out.println("Notification: " + notifMsg.getMessage());
                     break;
-                default:
-                    System.out.println("Received unknown server message type: " + type);
-                    System.out.println("Raw message: " + message);
             }
-        } else {
-            System.out.println("Received message without serverMessageType: " + message);
+        } catch (Exception e) {
+            System.err.println("Error processing message: " + e.getMessage());
+            System.err.println("Raw message: " + message);
         }
-
     }
-
 
     @OnError
     public void onError(Session session, Throwable throwable) {
