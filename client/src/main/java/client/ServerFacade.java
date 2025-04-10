@@ -100,6 +100,6 @@ public class ServerFacade {
     }
 
     public String getHost() {
-        return null;
+        return serverURL;
     }
 }

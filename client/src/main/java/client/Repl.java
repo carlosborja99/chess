@@ -6,15 +6,14 @@ import com.google.gson.JsonObject;
 import org.glassfish.tyrus.client.ClientManager;
 import ui.RenderBoard;
 import websocket.commands.UserGameCommand;
+import websocket.messages.ServerMessage;
 
 import javax.websocket.*;
-import java.io.IOException;
+import java.import java.io.IOException;
+net.URI;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 @ClientEndpoint
 public class Repl {
@@ -57,8 +56,7 @@ public class Repl {
                         String boardPlay = gameData.has("board") ? gameData.get("board").getAsString() : null;
                         if (boardPlay != null) {
                             try{
-                                currentBoard = FenUtility.FENtoBoard(boardPlay);
-                                boardRender.render(playerColor == ChessGame.TeamColor.WHITE || observe);
+                                boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
                             } catch (Exception e) {
                                 System.err.println("Error parsing FEN: " + e.getMessage());
                                 System.err.println("Raw FEN: " + boardPlay);
@@ -264,7 +262,7 @@ public class Repl {
                 playerColor = null;
                 highlightedMoves.clear();
                 connectWebSocket();
-                boardRender.render(true); // Observer always sees from white's perspective initially
+                boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves); // Observer always sees from white's perspective initially
                 break;
             case "redraw":
                 if (currentBoard != null) {
@@ -284,19 +282,14 @@ public class Repl {
                         ChessPosition endPosition = notationToPosition(input[2]);
                         if (startPosition != null && endPosition != null){
                             ChessMove move = new ChessMove(startPosition, endPosition, null);
-                            UserGameCommand makeMoveCommand = new UserGameCommand(
-                                    UserGameCommand.CommandType.MAKE_MOVE,
-                                    facade.getAuthToken(),
-                                    Integer.parseInt(currentGameID)
-                            );
-                            Map<String, Object> moveData = new HashMap<>();
-                            moveData.put("start", positionToObject(startPosition));
-                            moveData.put("end", positionToObject(endPosition));
                             JsonObject jsonCommand = new JsonObject();
                             jsonCommand.addProperty("commandType", "MAKE_MOVE");
                             jsonCommand.addProperty("authToken", facade.getAuthToken());
                             jsonCommand.addProperty("gameID", currentGameID);
-                            jsonCommand.add("move", gson.toJsonTree(moveData));
+                            JsonObject moveData = new JsonObject();
+                            moveData.add("start", gson.toJsonTree(positionToObject(startPosition)));
+                            moveData.add("end", gson.toJsonTree(positionToObject(endPosition)));
+                            jsonCommand.add("move", moveData);
                             websocketSession.getBasicRemote().sendText(gson.toJson(jsonCommand));
                             System.out.println("Sent move: " + input[1] + " to " + input[2]);
                         } else {
@@ -315,33 +308,78 @@ public class Repl {
                     currentGameID = null;
                     playerColor = null;
                     observe = false;
+                    highlightedMoves.clear();
                     System.out.println("Left the game");
                 } else{
                     System.out.println("No game to leave");
                 }
                 break;
             case "resign":
-                if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
-                    sendWebSocketCommand(UserGameCommand.CommandType.RESIGN);
-                    System.out.println("Resigned from game");
-                    currentGameID = null;
-                    playerColor = null;
-                    observe = false;
-                } else{
-                    System.out.println("No game to resign from");
+                System.out.print("Are you sure you want to resign from the game? (type 'yes' to confirm): ");
+                String confirmation = scanner.nextLine().toLowerCase();
+                if (confirmation.equals("yes")) {
+                    if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
+                        sendWebSocketCommand(UserGameCommand.CommandType.RESIGN);
+                        System.out.println("Resigned from game");
+                        currentGameID = null;
+                        playerColor = null;
+                        observe = false;
+                        highlightedMoves.clear();
+                    } else{
+                        System.out.println("No game to resign from");
+                    }
+                } else {
+                    System.out.print("Resignation cancelled.");
                 }
                 break;
+            case "highlight":
+                if(input.length != 3) {
+                    System.out.println("Usage: highlight legal moves <square>");
+                    break;
+                }
+                if (currentBoard != null) {
+                    ChessPosition position = notationToPosition(input[2]);
+                    if (position != null) {
+                        ChessPiece piece = currentBoard.getPiece(position);
+                        if (piece != null && (observe || piece.getTeamColor() == playerColor)) {
+                            ChessGame game = new ChessGame();
+                            game.setBoard(currentBoard);
+                            Set<ChessMove> legalMoves = (Set<ChessMove>) game.validMoves(position);
+                            highlightedMoves.clear();
+                            highlightedMoves.put(input[2], position);
+                            for (ChessMove move : legalMoves) {
+                                highlightedMoves.put(positionToNotation(move.getEndPosition()), move.getEndPosition());
+                            }
+                            boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
+                        } else {
+                            System.out.println("No piece at " + input[2] + " or it's not your piece.");
+                        }
+                    } else {
+                        System.out.println("Invalid square notation: " + input[2]);
+                    }
+                } else {
+                    System.out.println("No board loaded.");
+                }
+                break;
+
             default:
                 System.out.println("Unknown command. Type \"help\" for options.");
 
         }
     }
 
+    private String positionToNotation(ChessPosition endPosition) {
+        char file = (char) ('a' + endPosition.getColumn() - 1);
+        int rank = endPosition.getRow();
+        return String.valueOf(file) + rank;
+
+    }
+
     private void connectWebSocket() {
         ClientEndpointConfig cec = ClientEndpointConfig.Builder.create().build();
         try {
             ClientManager client = ClientManager.createClient();
-            client.connectToServer(this, new URI(facade.getHost() + "/ws"));
+            client.connectToServer(this, new URI(serverURL + "ws"));
         } catch (DeploymentException | IOException | URISyntaxException e) {
             System.err.println("Error connecting to WebSocket: " + e.getMessage());
         }
