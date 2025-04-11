@@ -47,6 +47,11 @@ public class GameService {
         return new CreateGameResult(gameID);
     }
 
+
+    public GameData getGame(int gameID) throws DataAccessException {
+        return existingGame(gameID);
+    }
+
     /**
      * Allows the player to join an existing game.
      * @param request has the authToken, player color, and the game ID.

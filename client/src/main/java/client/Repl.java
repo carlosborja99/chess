@@ -47,19 +47,19 @@ public class Repl {
             ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
             switch (serverMessage.getServerMessageType()) {
                 case LOAD_GAME:
-                    LoadGameMessage loadMsg = gson.fromJson(message, LoadGameMessage.class);
-                    if (loadMsg.getGame() != null) {
-                        this.currentBoard = loadMsg.getGame().getBoard();
+                    ChessGame chessGame = serverMessage.getGame();
+                    if (chessGame != null) {
+                        currentBoard = chessGame.getBoard();
                         boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
+                    } else {
+                        System.err.println("LOAD_GAME message missing game data");
                     }
                     break;
                 case ERROR:
-                    ErrorMessage errorMsg = gson.fromJson(message, ErrorMessage.class);
-                    System.err.println("Server Error: " + errorMsg.getErrorMessage());
+                    System.out.println("Error: " + serverMessage.getMessage());
                     break;
                 case NOTIFICATION:
-                    NotificationMessage notifMsg = gson.fromJson(message, NotificationMessage.class);
-                    System.out.println("Notification: " + notifMsg.getMessage());
+                    System.out.println("Notification: " + serverMessage.getMessage());
                     break;
             }
         } catch (Exception e) {
@@ -354,7 +354,8 @@ public class Repl {
         ClientEndpointConfig cec = ClientEndpointConfig.Builder.create().build();
         try {
             ClientManager client = ClientManager.createClient();
-            client.connectToServer(this, new URI(serverURL + "ws"));
+            String wsUrl = facade.getHost().replace("http://", "ws://") + "ws";
+            client.connectToServer(this, new URI(wsUrl));
         } catch (DeploymentException | IOException | URISyntaxException e) {
             System.err.println("Error connecting to WebSocket: " + e.getMessage());
         }

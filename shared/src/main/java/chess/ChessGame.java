@@ -13,6 +13,8 @@ import java.util.Map;
 public class ChessGame {
     private ChessBoard board;
     private TeamColor turnTeam;
+    private boolean gameOver;
+
     public ChessGame() {
         this.board = new ChessBoard();
         this.board.resetBoard();
@@ -210,5 +212,14 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return board;
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+    }
+
+    public boolean isGameOver() {
+        return gameOver || isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK) ||
+                isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK);
     }
 }

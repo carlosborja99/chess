@@ -44,31 +44,22 @@ public class ServerMessage {
         return Objects.hash(getServerMessageType());
     }
 
-    class LoadGameMessage extends ServerMessage {
-        private ChessGame game;
-        public  LoadGameMessage() {
-            super(ServerMessageType.LOAD_GAME);
-        }
-        public ChessGame getGame() {
-            return game;
-        }
+    /// New data
+    private ChessGame game;
+    private String message;
+
+    public ServerMessage(ServerMessageType type, ChessGame game) {
+        this.serverMessageType = type;
+        this.game = game;
     }
-    class ErrorMessage extends ServerMessage {
-        private String errorMessage;
-        public ErrorMessage() {
-            super(ServerMessageType.ERROR);
-        }
-        public String getErrorMessage() {
-            return errorMessage;
-        }
+    public ServerMessage(ServerMessageType type, String message) {
+        this.serverMessageType = type;
+        this.message = message;
     }
-    class NotificationMessage extends ServerMessage {
-        private String message;
-        public NotificationMessage() {
-            super(ServerMessageType.NOTIFICATION);
-        }
-        public String getMessage() {
-            return message;
-        }
+    public ChessGame getGame() {
+        return game;
+    }
+    public String getMessage() {
+        return message;
     }
 }

@@ -91,6 +91,10 @@ public class UserService {
         }
     }
 
+    public AuthData verifyAuthToken(String authToken) throws DataAccessException {
+        return getAuthorizationOrThrow(authToken);
+    }
+
     private UserData getUserOrThrow(String username) throws DataAccessException {
         UserData user = dataAccess.getUser(username);
         if (user == null) {

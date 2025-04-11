@@ -2,8 +2,6 @@ package server;
 
 import com.google.gson.Gson;
 import dataaccess.*;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import org.eclipse.jetty.websocket.server.WebSocketHandler;
 import service.*;
 import spark.*;
 
@@ -25,7 +23,6 @@ public class Server {
         this.userService = new UserService(dataAccess);
         this.gameService = new GameService(dataAccess);
         this.gson = new Gson();
-        this.webSocketHandler = new WebSocketHandler(userService, gameService);
     }
 
     public int run(int desiredPort) {
@@ -33,8 +30,8 @@ public class Server {
         Spark.port(desiredPort);
 
         Spark.staticFiles.location("web");
-        Spark.webSocket("/ws", webSocketHandler);
         // Register your endpoints and handle exceptions here.
+        Spark.webSocket("/ws", new WebSocketHandler(userService, gameService));
         Spark.delete("/db", this::clear);
         Spark.post("/user", this::register);
         Spark.post("/session", this::login);
