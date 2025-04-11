@@ -3,6 +3,7 @@ package client;
 import chess.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.glassfish.tyrus.client.ClientManager;
 import ui.RenderBoard;
 import websocket.commands.UserGameCommand;
@@ -63,22 +64,23 @@ public class Repl {
                     System.out.println("Notification: " + serverMessage.getMessage());
                     break;
             }
-        } catch (Exception e) {
-            System.err.println("Error processing message: " + e.getMessage());
+        } catch (JsonSyntaxException e) {
+            System.err.println("Error parsing message: " + e.getMessage());
             System.err.println("Raw message: " + message);
+        } catch (Exception e) {
+            System.err.println("Unexpected error processing message: " + e.getMessage());
         }
     }
-
-    @OnError
-    public void onError(Session session, Throwable throwable) {
-        System.err.println("[WebSocket Error] Session ID: " + session.getId() + " Error: " + throwable.getMessage());
-    }
-
-    @OnClose
-    public void onClose(Session session, CloseReason closeReason) {
-        System.out.println("[WebSocket Closed] Session ID: " + session.getId() + " Reason: " + closeReason.getReasonPhrase());
-        websocketSession = null;
-    }
+//    @OnError
+//    public void onError(Session session, Throwable throwable) {
+//        System.err.println("[WebSocket Error] Session ID: " + session.getId() + " Error: " + throwable.getMessage());
+//    }
+//
+//    @OnClose
+//    public void onClose(Session session, CloseReason closeReason) {
+//        System.out.println("[WebSocket Closed] Session ID: " + session.getId() + " Reason: " + closeReason.getReasonPhrase());
+//        websocketSession = null;
+//    }
 
     public void run() {
         System.out.println("♕ Welcome! to 240 Chess. Type help to get started. ♕");
@@ -140,208 +142,253 @@ public class Repl {
     private void postLogin() throws Exception {
         System.out.print(currentGameID == null ? "[LOGGED_IN] >>> " : "[IN_GAME] >>> ");
         String[] input = scanner.nextLine().split("\\s+");
+        if (input.length == 0) {
+            System.out.println("Please enter a command.");
+            return;
+        }
         String command = input[0].toLowerCase();
-        switch (command){
+
+        switch (command) {
             case "help":
-                if (currentGameID == null){
-                    System.out.println("Available commands:");
-                    System.out.println("  create <NAME> - a game");
-                    System.out.println("  list - games");
-                    System.out.println("  join <ID> <WHITE|BLACK> - a game");
-                    System.out.println("  observe <ID> - a game");
-                    System.out.println("  logout - when you are done");
-                    System.out.println("  help - with possible commands\n");
-                } else {
-                    System.out.println("Available commands:");
-                    System.out.println("  redraw - the chess board:");
-                    System.out.println("  move <start> <end> - make a move (e.g., a2 a4)");
-                    System.out.println("  leave - the current game");
-                    System.out.println("  resign - the current game");
-                    System.out.println("  highlight - the legal moves for a piece");
-                    System.out.println("  help - with possible commands\n");
-                }
+                displayPostLoginHelp();
                 break;
             case "logout":
-                facade.logout();
-                System.out.println("Logged out.");
-                logged = false;
+                handleLogout();
+                break;
+            case "create":
+                handleCreateGame(input);
+                break;
+            case "list":
+                handleListGames();
+                break;
+            case "join":
+                handleJoinGame(input);
+                break;
+            case "observe":
+                handleObserveGame(input);
+                break;
+            case "redraw":
+                handleRedrawBoard();
+                break;
+            case "move":
+                handleMakeMove(input);
+                break;
+            case "leave":
+                handleLeaveGame();
+                break;
+            case "resign":
+                handleResignGame();
+                break;
+            case "highlight":
+                handleHighlightMoves(input);
+                break;
+            default:
+                System.out.println("Unknown command. Type \"help\" for options.");
+        }
+    }
+
+    private void displayPostLoginHelp() {
+        if (currentGameID == null) {
+            System.out.println("Available commands:");
+            System.out.println("  create <NAME> - a game");
+            System.out.println("  list - games");
+            System.out.println("  join <ID> <WHITE|BLACK> - a game");
+            System.out.println("  observe <ID> - a game");
+            System.out.println("  logout - when you are done");
+            System.out.println("  help - with possible commands\n");
+        } else {
+            System.out.println("Available commands:");
+            System.out.println("  redraw - the chess board:");
+            System.out.println("  move <start> <end> - make a move (e.g., a2 a4)");
+            System.out.println("  leave - the current game");
+            System.out.println("  resign - the current game");
+            System.out.println("  highlight - the legal moves for a piece");
+            System.out.println("  help - with possible commands\n");
+        }
+    }
+
+    private void handleLogout() throws Exception {
+        facade.logout();
+        System.out.println("Logged out.");
+        logged = false;
+        currentGameID = null;
+        playerColor = null;
+        observe = false;
+        highlightedMoves.clear();
+        if (websocketSession != null && websocketSession.isOpen()) {
+            websocketSession.close();
+            websocketSession = null;
+        }
+    }
+
+    private void handleCreateGame(String[] input) throws Exception {
+        if (input.length != 2) {
+            System.out.println("Usage: create <NAME>");
+            return;
+        }
+        facade.createMyGame(input[1]);
+        System.out.println("Game " + input[1] + " created.");
+    }
+
+    private void handleListGames() throws Exception {
+        List<Map<String, Object>> games = facade.listOfGames();
+        gameNumberToID.clear();
+        if (games.isEmpty()) {
+            System.out.println("No games available.");
+        } else {
+            for (int i = 0; i < games.size(); i++) {
+                Map<String, Object> game = games.get(i);
+                String gameID = game.get("gameID").toString();
+                String gameName = game.get("gameName").toString();
+                String whitePlayer = game.get("whiteUsername") != null ? game.get("whiteUsername").toString() : "None";
+                String blackPlayer = game.get("blackUsername") != null ? game.get("blackUsername").toString() : "None";
+                int num = i + 1;
+                gameNumberToID.put(num, gameID);
+                System.out.printf("%d. %s [White: %s] [Black: %s]%n",
+                        num, gameName, whitePlayer, blackPlayer);
+            }
+        }
+    }
+    private void handleJoinGame(String[] input) throws Exception {
+        if (input.length != 3 || (!input[2].equalsIgnoreCase("WHITE") && !input[2].equalsIgnoreCase("BLACK"))) {
+            System.out.println("Usage: join <ID> <WHITE|BLACK>");
+            return;
+        }
+        int playNum = Integer.parseInt(input[1]);
+        String gameID = gameNumberToID.get(playNum);
+        if (gameID == null) {
+            System.out.println("Invalid game number.");
+            return;
+        }
+        facade.joinGame(gameID, input[2].toUpperCase());
+        System.out.println("Joined game as " + input[2]);
+        playerColor = input[2].equalsIgnoreCase("WHITE") ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+        currentGameID = gameID;
+        observe = false;
+        highlightedMoves.clear();
+        connectWebSocket();
+    }
+
+    private void handleObserveGame(String[] input) throws Exception {
+        if (input.length != 2) {
+            System.out.println("Usage: observe <ID>");
+            return;
+        }
+        int observeNum = Integer.parseInt(input[1]);
+        String gameIDObserve = gameNumberToID.get(observeNum);
+        if (gameIDObserve == null) {
+            System.out.println("Invalid game number.");
+            return;
+        }
+        System.out.println("Observing game " + observeNum);
+        currentGameID = gameIDObserve;
+        observe = true;
+        playerColor = null;
+        highlightedMoves.clear();
+        connectWebSocket();
+        boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
+    }
+
+    private void handleRedrawBoard() {
+        if (currentBoard != null) {
+            boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
+        } else {
+            System.out.println("No board to redraw.");
+        }
+    }
+
+    private void handleMakeMove(String[] input) throws IOException {
+        if (input.length != 3) {
+            System.out.println("Usage: move <start_square> <end_square>");
+            return;
+        }
+        if (currentGameID != null && websocketSession != null && websocketSession.isOpen()) {
+            try {
+                ChessPosition startPosition = notationToPosition(input[1]);
+                ChessPosition endPosition = notationToPosition(input[2]);
+                if (startPosition != null && endPosition != null) {
+                    ChessMove move = new ChessMove(startPosition, endPosition, null);
+                    JsonObject jsonCommand = new JsonObject();
+                    jsonCommand.addProperty("commandType", "MAKE_MOVE");
+                    jsonCommand.addProperty("authToken", facade.getAuthToken());
+                    jsonCommand.addProperty("gameID", currentGameID);
+                    JsonObject moveData = new JsonObject();
+                    moveData.add("start", gson.toJsonTree(positionToObject(startPosition)));
+                    moveData.add("end", gson.toJsonTree(positionToObject(endPosition)));
+                    jsonCommand.add("move", moveData);
+                    websocketSession.getBasicRemote().sendText(gson.toJson(jsonCommand));
+                    System.out.println("Sent move: " + input[1] + " to " + input[2]);
+                } else {
+                    System.out.println("Invalid move notation!");
+                }
+            } catch (IOException e) {
+                System.err.println("Error sending move: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Not connected via WebSocket");
+        }
+    }
+
+    private void handleLeaveGame() throws IOException {
+        if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
+            sendWebSocketCommand(UserGameCommand.CommandType.LEAVE);
+            currentGameID = null;
+            playerColor = null;
+            observe = false;
+            highlightedMoves.clear();
+            System.out.println("Left the game");
+        } else {
+            System.out.println("No game to leave");
+        }
+    }
+
+    private void handleResignGame() throws IOException {
+        System.out.print("Are you sure you want to resign from the game? (type 'yes' to confirm): ");
+        String confirmation = scanner.nextLine().toLowerCase();
+        if (confirmation.equals("yes")) {
+            if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
+                sendWebSocketCommand(UserGameCommand.CommandType.RESIGN);
+                System.out.println("Resigned from game");
                 currentGameID = null;
                 playerColor = null;
                 observe = false;
                 highlightedMoves.clear();
-                if (websocketSession.isOpen() && websocketSession != null) {
-                    websocketSession.close();
-                    websocketSession = null;
-                }
-                break;
-            case "create":
-                if(input.length != 2){
-                    System.out.println("Usage: create <NAME>");
-                    break;
-                }
-                facade.createMyGame(input[1]);
-                System.out.println("Game " + input[1] + " created.");
-                break;
-            case "list":
-                List<Map<String, Object>> games = facade.listOfGames();
-                gameNumberToID.clear();
-                if (games.isEmpty()){
-                    System.out.println("No games available.");
-                } else {
-                    for (int i = 0; i < games.size(); i++){
-                        Map<String, Object> game = games.get(i);
-                        String gameID = game.get("gameID").toString();
-                        String gameName = game.get("gameName").toString();
-                        String whitePlayer = game.get("whiteUsername") != null ? game.get("whiteUsername").toString() : "None";
-                        String blackPlayer = game.get("blackUsername") != null ? game.get("blackUsername").toString() : "None";
-                        int num = i + 1;
-                        gameNumberToID.put(num, gameID);
-                        System.out.printf("%d. %s [White: %s] [Black: %s]%n",
-                                num, gameName, whitePlayer, blackPlayer);
-                    }
-                }
-                break;
-            case "join":
-                if(input.length != 3 || (!input[2].equalsIgnoreCase("WHITE") && !input[2].equalsIgnoreCase("BLACK"))){
-                    System.out.println("Usage: join <ID> <WHITE|BLACK>");
-                    break;
-                }
-                int playNum = Integer.parseInt(input[1]);
-                String gameID = gameNumberToID.get(playNum);
-                if (gameID == null){
-                    System.out.println("Invalid game number.");
-                    break;
-                }
-                facade.joinGame(gameID, input[2].toUpperCase());
-                System.out.println("Joined game as " + input[2]);
-                playerColor = input[2].equalsIgnoreCase("WHITE") ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
-                currentGameID = gameID;
-                observe = false;
-                highlightedMoves.clear();
-                connectWebSocket(); // Initiate WebSocket connection after joining
-//                new RenderBoard().render(input[2].equalsIgnoreCase("WHITE"));
-                break;
-            case "observe":
-                if(input.length != 2){
-                    System.out.println("Usage: observe <ID>");
-                    break;
-                }
-                int observeNum = Integer.parseInt(input[1]);
-                String gameIDObserve = gameNumberToID.get(observeNum);
-                if (gameIDObserve == null){
-                    System.out.println("Invalid game number.");
-                    break;
-                }
-                System.out.println("Observing game " + observeNum);
-                currentGameID = gameIDObserve;
-                observe = true;
-                playerColor = null;
-                highlightedMoves.clear();
-                connectWebSocket();
-                boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves); // Observer always sees from white's perspective initially
-                break;
-            case "redraw":
-                if (currentBoard != null) {
-                    boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
-                } else {
-                    System.out.println("No board to redraw.");
-                }
-
-            case "move":
-                if(input.length != 3){
-                    System.out.println("Usage: move <start_square> <end_square>");
-                    break;
-                }
-                if (currentGameID != null && websocketSession.isOpen() && websocketSession != null) {
-                    try {
-                        ChessPosition startPosition = notationToPosition(input[1]);
-                        ChessPosition endPosition = notationToPosition(input[2]);
-                        if (startPosition != null && endPosition != null){
-                            ChessMove move = new ChessMove(startPosition, endPosition, null);
-                            JsonObject jsonCommand = new JsonObject();
-                            jsonCommand.addProperty("commandType", "MAKE_MOVE");
-                            jsonCommand.addProperty("authToken", facade.getAuthToken());
-                            jsonCommand.addProperty("gameID", currentGameID);
-                            JsonObject moveData = new JsonObject();
-                            moveData.add("start", gson.toJsonTree(positionToObject(startPosition)));
-                            moveData.add("end", gson.toJsonTree(positionToObject(endPosition)));
-                            jsonCommand.add("move", moveData);
-                            websocketSession.getBasicRemote().sendText(gson.toJson(jsonCommand));
-                            System.out.println("Sent move: " + input[1] + " to " + input[2]);
-                        } else {
-                            System.out.println("Invalid move notation!");
-                        }
-                    } catch (IOException e) {
-                        System.err.println("Error sending move: " + e.getMessage());
-                    }
-                } else {
-                    System.out.println("Not connected via WebSocket");
-                }
-                break;
-            case "leave":
-                if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
-                    sendWebSocketCommand(UserGameCommand.CommandType.LEAVE);
-                    currentGameID = null;
-                    playerColor = null;
-                    observe = false;
-                    highlightedMoves.clear();
-                    System.out.println("Left the game");
-                } else{
-                    System.out.println("No game to leave");
-                }
-                break;
-            case "resign":
-                System.out.print("Are you sure you want to resign from the game? (type 'yes' to confirm): ");
-                String confirmation = scanner.nextLine().toLowerCase();
-                if (confirmation.equals("yes")) {
-                    if (websocketSession != null && currentGameID != null && websocketSession.isOpen()) {
-                        sendWebSocketCommand(UserGameCommand.CommandType.RESIGN);
-                        System.out.println("Resigned from game");
-                        currentGameID = null;
-                        playerColor = null;
-                        observe = false;
-                        highlightedMoves.clear();
-                    } else{
-                        System.out.println("No game to resign from");
-                    }
-                } else {
-                    System.out.print("Resignation cancelled.");
-                }
-                break;
-            case "highlight":
-                if(input.length != 3) {
-                    System.out.println("Usage: highlight legal moves <square>");
-                    break;
-                }
-                if (currentBoard != null) {
-                    ChessPosition position = notationToPosition(input[2]);
-                    if (position != null) {
-                        ChessPiece piece = currentBoard.getPiece(position);
-                        if (piece != null && (observe || piece.getTeamColor() == playerColor)) {
-                            ChessGame game = new ChessGame();
-                            game.setBoard(currentBoard);
-                            Set<ChessMove> legalMoves = (Set<ChessMove>) game.validMoves(position);
-                            highlightedMoves.clear();
-                            highlightedMoves.put(input[2], position);
-                            for (ChessMove move : legalMoves) {
-                                highlightedMoves.put(positionToNotation(move.getEndPosition()), move.getEndPosition());
-                            }
-                            boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
-                        } else {
-                            System.out.println("No piece at " + input[2] + " or it's not your piece.");
-                        }
-                    } else {
-                        System.out.println("Invalid square notation: " + input[2]);
-                    }
-                } else {
-                    System.out.println("No board loaded.");
-                }
-                break;
-
-            default:
-                System.out.println("Unknown command. Type \"help\" for options.");
-
+            } else {
+                System.out.println("No game to resign from");
+            }
+        } else {
+            System.out.println("Resignation cancelled.");
         }
+    }
+
+    private void handleHighlightMoves(String[] input) {
+        if (input.length != 3) {
+            System.out.println("Usage: highlight legal moves <square>");
+            return;
+        }
+        if (currentBoard == null) {
+            System.out.println("No board loaded.");
+            return;
+        }
+        ChessPosition position = notationToPosition(input[2]);
+        if (position == null) {
+            System.out.println("Invalid square notation: " + input[2]);
+            return;
+        }
+        ChessPiece piece = currentBoard.getPiece(position);
+        if (piece == null || (!observe && piece.getTeamColor() != playerColor)) {
+            System.out.println("No piece at " + input[2] + " or it's not your piece.");
+            return;
+        }
+        ChessGame game = new ChessGame();
+        game.setBoard(currentBoard);
+        Set<ChessMove> legalMoves = (Set<ChessMove>) game.validMoves(position);
+        highlightedMoves.clear();
+        highlightedMoves.put(input[2], position);
+        for (ChessMove move : legalMoves) {
+            highlightedMoves.put(positionToNotation(move.getEndPosition()), move.getEndPosition());
+        }
+        boardRender.render(currentBoard, playerColor == ChessGame.TeamColor.WHITE || observe, highlightedMoves);
     }
 
     private String positionToNotation(ChessPosition endPosition) {
