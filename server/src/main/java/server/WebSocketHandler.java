@@ -133,36 +133,10 @@ public class WebSocketHandler {
                 return;
             }
 
-            JsonObject json = gson.fromJson(message, JsonObject.class);
-            if (!json.has("move")) {
-                sendError(session, "Invalid move: Missing move data");
-                return;
+            ChessMove move = createChessMove(session, message);
+            if (move == null) {
+                return; // Error already sent in createChessMove
             }
-            JsonObject moveJson = json.getAsJsonObject("move");
-            if (!moveJson.has("startPosition") || !moveJson.has("endPosition")) {
-                sendError(session, "Invalid move: Missing startPosition or endPosition");
-                return;
-            }
-            JsonObject startJson = moveJson.getAsJsonObject("startPosition");
-            JsonObject endJson = moveJson.getAsJsonObject("endPosition");
-            if (!startJson.has("row") || !startJson.has("col") || !endJson.has("row") || !endJson.has("col")) {
-                sendError(session, "Invalid move: Missing row or col in positions");
-                return;
-            }
-            ChessPosition startPos = new ChessPosition(
-                    startJson.get("row").getAsInt(),
-                    startJson.get("col").getAsInt()
-            );
-            ChessPosition endPos = new ChessPosition(
-                    endJson.get("row").getAsInt(),
-                    endJson.get("col").getAsInt()
-            );
-            ChessPiece.PieceType promotionPiece = null;
-            if (moveJson.has("promotionPiece") && !moveJson.get("promotionPiece").isJsonNull()) {
-                String promotion = moveJson.get("promotionPiece").getAsString();
-                promotionPiece = ChessPiece.PieceType.valueOf(promotion.toUpperCase());
-            }
-            ChessMove move = new ChessMove(startPos, endPos, promotionPiece);
 
             ChessGame.TeamColor playerColor = username.equals(gameData.whiteUsername()) ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
             if (game.getTeamTurn() != playerColor) {
@@ -185,36 +159,86 @@ public class WebSocketHandler {
             );
             gameService.updateGame(updatedGame);
 
-            Map<Session, Connection> connections = gameConnections.get(gameID);
-            if (connections != null) {
-                ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, game);
-                String notificationText = String.format("%s moved from %s to %s",
-                        username,
-                        positionToNotation(startPos),
-                        positionToNotation(endPos)
-                );
-                ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, notificationText);
-                boolean isGameOver = game.isGameOver();
-                if (isGameOver) {
-                    String gameOverText = game.isInCheckmate(playerColor) ?
-                            String.format("%s is in checkmate. %s wins!", playerColor, playerColor == ChessGame.TeamColor.WHITE ? "Black" : "White") :
-                            "Game ended in stalemate.";
-                    notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, gameOverText);
-                }
-                for (Map.Entry<Session, Connection> entry : connections.entrySet()) {
-                    Session clientSession = entry.getKey();
-                    if (clientSession.isOpen()) {
-                        clientSession.getRemote().sendString(gson.toJson(loadGameMessage));
-                        if (!clientSession.equals(session)) {
-                            clientSession.getRemote().sendString(gson.toJson(notification));
-                        }
-                    }
-                }
-            }
+            broadcastMoveUpdate(session, gameID, game, username, move);
         } catch (DataAccessException e) {
             sendError(session, "Error accessing game data: " + e.getMessage());
         } catch (Exception e) {
             sendError(session, "Invalid move format: " + e.getMessage());
+        }
+    }
+
+    private ChessMove createChessMove(Session session, String message) throws IOException {
+        JsonObject json = gson.fromJson(message, JsonObject.class);
+        if (!json.has("move")) {
+            sendError(session, "Invalid move: Missing move data");
+            return null;
+        }
+        JsonObject moveJson = json.getAsJsonObject("move");
+        if (!moveJson.has("startPosition") || !moveJson.has("endPosition")) {
+            sendError(session, "Invalid move: Missing startPosition or endPosition");
+            return null;
+        }
+        JsonObject startJson = moveJson.getAsJsonObject("startPosition");
+        JsonObject endJson = moveJson.getAsJsonObject("endPosition");
+        if (!startJson.has("row") || !startJson.has("col") || !endJson.has("row") || !endJson.has("col")) {
+            sendError(session, "Invalid move: Missing row or col in positions");
+            return null;
+        }
+        ChessPosition startPos = new ChessPosition(
+                startJson.get("row").getAsInt(),
+                startJson.get("col").getAsInt()
+        );
+        ChessPosition endPos = new ChessPosition(
+                endJson.get("row").getAsInt(),
+                endJson.get("col").getAsInt()
+        );
+        ChessPiece.PieceType promotionPiece = null;
+        if (moveJson.has("promotionPiece") && !moveJson.get("promotionPiece").isJsonNull()) {
+            String promotion = moveJson.get("promotionPiece").getAsString();
+            promotionPiece = ChessPiece.PieceType.valueOf(promotion.toUpperCase());
+        }
+        return new ChessMove(startPos, endPos, promotionPiece);
+    }
+
+    private void broadcastMoveUpdate(Session session, Integer gameID, ChessGame game, String username, ChessMove move) throws IOException {
+        Map<Session, Connection> connections = gameConnections.get(gameID);
+        if (connections == null) {
+            return;
+        }
+
+        ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, game);
+        ServerMessage notification = createMoveNotification(game, username, move);
+
+        for (Map.Entry<Session, Connection> entry : connections.entrySet()) {
+            sendMessagesToClient(entry.getKey(), session, loadGameMessage, notification);
+        }
+    }
+
+    private ServerMessage createMoveNotification(ChessGame game, String username, ChessMove move) {
+        boolean isGameOver = game.isGameOver();
+        if (!isGameOver) {
+            String notificationText = String.format("%s moved from %s to %s",
+                    username,
+                    positionToNotation(move.getStartPosition()),
+                    positionToNotation(move.getEndPosition())
+            );
+            return new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, notificationText);
+        }
+
+        ChessGame.TeamColor playerColor = game.getTeamTurn();
+        String gameOverText = game.isInCheckmate(playerColor) ?
+                String.format("%s is in checkmate. %s wins!", playerColor, playerColor == ChessGame.TeamColor.WHITE ? "Black" : "White") :
+                "Game ended in stalemate.";
+        return new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, gameOverText);
+    }
+
+    private void sendMessagesToClient(Session clientSession, Session senderSession, ServerMessage loadGameMessage, ServerMessage notification) throws IOException {
+        if (!clientSession.isOpen()) {
+            return;
+        }
+        clientSession.getRemote().sendString(gson.toJson(loadGameMessage));
+        if (!clientSession.equals(senderSession)) {
+            clientSession.getRemote().sendString(gson.toJson(notification));
         }
     }
 
