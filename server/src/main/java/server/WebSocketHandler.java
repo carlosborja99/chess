@@ -224,8 +224,9 @@ public class WebSocketHandler {
         }
 
         ChessGame.TeamColor playerColor = game.getTeamTurn();
+        String winner = playerColor == ChessGame.TeamColor.WHITE ? "Black" : "White";
         String gameOverText = game.isInCheckmate(playerColor) ?
-                String.format("%s is in checkmate. %s wins!", playerColor, playerColor == ChessGame.TeamColor.WHITE ? "Black" : "White") :
+                String.format("%s is in checkmate. %s wins!", playerColor, winner) :
                 "Game ended in stalemate.";
         return new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, gameOverText);
     }
