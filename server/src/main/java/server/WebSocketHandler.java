@@ -224,13 +224,15 @@ public class WebSocketHandler {
         }
 
         ChessGame.TeamColor playerColor = game.getTeamTurn();
-        String winner = playerColor == ChessGame.TeamColor.WHITE ? "Black" : "White";
-        String gameOverText = game.isInCheckmate(playerColor) ?
-                String.format("%s is in checkmate. %s wins!", playerColor, winner) :
-                "Game ended in stalemate.";
+        String gameOverText;
+        if (game.isInCheckmate(playerColor)) {
+            String winner = playerColor == ChessGame.TeamColor.WHITE ? "Black" : "White";
+            gameOverText = String.format("%s is in checkmate. %s wins!", playerColor, winner);
+        } else {
+            gameOverText = "Game ended in stalemate.";
+        }
         return new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, gameOverText);
     }
-
     private void sendMessagesToClient(Session clientSession, Session senderSession, ServerMessage loadGameMessage, ServerMessage notification) throws IOException {
         if (!clientSession.isOpen()) {
             return;
