@@ -56,6 +56,7 @@ public class MySQLDataAccess implements DataAccess {
             jsonObject.add("board",
                     jsonSerializationContext.serialize(chessGame.getBoard()));
             jsonObject.addProperty("teamTurn", chessGame.getTeamTurn().toString());
+            jsonObject.addProperty("gameOver", chessGame.isGameOver());
             return jsonObject;
         }
 
@@ -66,6 +67,9 @@ public class MySQLDataAccess implements DataAccess {
             ChessGame game = new ChessGame();
             game.setBoard(jsonDeserializationContext.deserialize(jsonObject.get("board"), ChessBoard.class));
             game.setTeamTurn(ChessGame.TeamColor.valueOf(jsonObject.get("teamTurn").getAsString()));
+            if (jsonObject.has("gameOver")) {
+                game.setGameOver(jsonObject.get("gameOver").getAsBoolean());
+            }
             return game;
         }
     }

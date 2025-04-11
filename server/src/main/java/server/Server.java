@@ -1,6 +1,7 @@
 package server;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dataaccess.*;
 import service.*;
 import spark.*;
@@ -14,6 +15,9 @@ public class Server {
 
     public Server() {
 //        DataAccess dataAccess = new AccessDataInMemory();
+        this.gson = new GsonBuilder()
+                .enableComplexMapKeySerialization()
+                .create();
         MySQLDataAccess dataAccess = new MySQLDataAccess();
         try{
             dataAccess.configureDatabase();
@@ -22,7 +26,6 @@ public class Server {
         }
         this.userService = new UserService(dataAccess);
         this.gameService = new GameService(dataAccess);
-        this.gson = new Gson();
     }
 
     public int run(int desiredPort) {

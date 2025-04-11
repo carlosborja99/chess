@@ -14,7 +14,6 @@ import websocket.messages.*;
 
 import model.GameData;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -128,16 +127,28 @@ public class WebSocketHandler {
                 sendError(session, "Observers cannot make moves");
                 return;
             }
-            if (gameData.game().isGameOver()) {
+            ChessGame game = gameData.game();
+            if (game.isGameOver()) {
                 sendError(session, "Game is over");
                 return;
             }
 
-            // Parse the move from the message
             JsonObject json = gson.fromJson(message, JsonObject.class);
+            if (!json.has("move")) {
+                sendError(session, "Invalid move: Missing move data");
+                return;
+            }
             JsonObject moveJson = json.getAsJsonObject("move");
-            JsonObject startJson = moveJson.getAsJsonObject("start");
-            JsonObject endJson = moveJson.getAsJsonObject("end");
+            if (!moveJson.has("startPosition") || !moveJson.has("endPosition")) {
+                sendError(session, "Invalid move: Missing startPosition or endPosition");
+                return;
+            }
+            JsonObject startJson = moveJson.getAsJsonObject("startPosition");
+            JsonObject endJson = moveJson.getAsJsonObject("endPosition");
+            if (!startJson.has("row") || !startJson.has("col") || !endJson.has("row") || !endJson.has("col")) {
+                sendError(session, "Invalid move: Missing row or col in positions");
+                return;
+            }
             ChessPosition startPos = new ChessPosition(
                     startJson.get("row").getAsInt(),
                     startJson.get("col").getAsInt()
@@ -146,10 +157,13 @@ public class WebSocketHandler {
                     endJson.get("row").getAsInt(),
                     endJson.get("col").getAsInt()
             );
-            ChessMove move = new ChessMove(startPos, endPos, null); // Assuming no promotion for simplicity
+            ChessPiece.PieceType promotionPiece = null;
+            if (moveJson.has("promotionPiece") && !moveJson.get("promotionPiece").isJsonNull()) {
+                String promotion = moveJson.get("promotionPiece").getAsString();
+                promotionPiece = ChessPiece.PieceType.valueOf(promotion.toUpperCase());
+            }
+            ChessMove move = new ChessMove(startPos, endPos, promotionPiece);
 
-            // Validate and make the move
-            ChessGame game = gameData.game();
             ChessGame.TeamColor playerColor = username.equals(gameData.whiteUsername()) ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
             if (game.getTeamTurn() != playerColor) {
                 sendError(session, "Not your turn");
@@ -162,7 +176,6 @@ public class WebSocketHandler {
                 return;
             }
 
-            // Update game in database
             GameData updatedGame = new GameData(
                     gameData.gameID(),
                     gameData.whiteUsername(),
@@ -172,7 +185,6 @@ public class WebSocketHandler {
             );
             gameService.updateGame(updatedGame);
 
-            // Broadcast updated game to all connected clients
             Map<Session, Connection> connections = gameConnections.get(gameID);
             if (connections != null) {
                 ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, game);
@@ -182,11 +194,18 @@ public class WebSocketHandler {
                         positionToNotation(endPos)
                 );
                 ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, notificationText);
+                boolean isGameOver = game.isGameOver();
+                if (isGameOver) {
+                    String gameOverText = game.isInCheckmate(playerColor) ?
+                            String.format("%s is in checkmate. %s wins!", playerColor, playerColor == ChessGame.TeamColor.WHITE ? "Black" : "White") :
+                            "Game ended in stalemate.";
+                    notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, gameOverText);
+                }
                 for (Map.Entry<Session, Connection> entry : connections.entrySet()) {
                     Session clientSession = entry.getKey();
                     if (clientSession.isOpen()) {
                         clientSession.getRemote().sendString(gson.toJson(loadGameMessage));
-                        if (!entry.getValue().username.equals(username)) {
+                        if (!clientSession.equals(session)) {
                             clientSession.getRemote().sendString(gson.toJson(notification));
                         }
                     }
@@ -194,6 +213,8 @@ public class WebSocketHandler {
             }
         } catch (DataAccessException e) {
             sendError(session, "Error accessing game data: " + e.getMessage());
+        } catch (Exception e) {
+            sendError(session, "Invalid move format: " + e.getMessage());
         }
     }
 
@@ -206,7 +227,17 @@ public class WebSocketHandler {
             }
             Map<Session, Connection> connections = gameConnections.get(gameID);
             if (connections != null) {
-                connections.remove(session);
+                Connection conn = connections.remove(session);
+                if (conn != null && conn.isPlayer) {
+                    GameData updatedGame = new GameData(
+                            gameData.gameID(),
+                            username.equals(gameData.whiteUsername()) ? null : gameData.whiteUsername(),
+                            username.equals(gameData.blackUsername()) ? null : gameData.blackUsername(),
+                            gameData.gameName(),
+                            gameData.game()
+                    );
+                    gameService.updateGame(updatedGame);
+                }
                 String notificationText = String.format("%s left the game.", username);
                 ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, notificationText);
                 for (Map.Entry<Session, Connection> entry : connections.entrySet()) {
@@ -232,13 +263,13 @@ public class WebSocketHandler {
                 sendError(session, "Observers cannot resign");
                 return;
             }
-            if (gameData.game().isGameOver()) {
-                sendError(session, "Game is already over");
+            ChessGame game = gameData.game();
+            if (game.isGameOver()) {
+                sendError(session, "Error: Game is already over");
                 return;
             }
 
-            // Mark game as over
-            ChessGame game = gameData.game();
+            // Process valid resignation
             game.setGameOver(true);
             GameData updatedGame = new GameData(
                     gameData.gameID(),
@@ -249,7 +280,6 @@ public class WebSocketHandler {
             );
             gameService.updateGame(updatedGame);
 
-            // Notify all clients
             Map<Session, Connection> connections = gameConnections.get(gameID);
             if (connections != null) {
                 String notificationText = String.format("%s resigned from the game.", username);

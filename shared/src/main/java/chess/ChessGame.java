@@ -3,6 +3,7 @@ package chess;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * For a class that can manage a chess game, making moves on a board
@@ -19,6 +20,7 @@ public class ChessGame {
         this.board = new ChessBoard();
         this.board.resetBoard();
         this.turnTeam = TeamColor.WHITE;
+        this.gameOver = false;
     }
 
     /**
