@@ -233,7 +233,11 @@ public class WebSocketHandler {
         }
         return new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, gameOverText);
     }
-    private void sendMessagesToClient(Session clientSession, Session senderSession, ServerMessage loadGameMessage, ServerMessage notification) throws IOException {
+    private void sendMessagesToClient(Session clientSession,
+                                      Session senderSession,
+                                      ServerMessage loadGameMessage,
+                                      ServerMessage notification
+    )throws IOException {
         if (!clientSession.isOpen()) {
             return;
         }
