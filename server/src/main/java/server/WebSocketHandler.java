@@ -217,11 +217,9 @@ public class WebSocketHandler {
     private ServerMessage createMoveNotification(ChessGame game, String username, ChessMove move) {
         boolean isGameOver = game.isGameOver();
         if (!isGameOver) {
-            String notificationText = String.format("%s moved from %s to %s",
-                    username,
-                    positionToNotation(move.getStartPosition()),
-                    positionToNotation(move.getEndPosition())
-            );
+            String startPos = positionToNotation(move.getStartPosition());
+            String endPos = positionToNotation(move.getEndPosition());
+            String notificationText = String.format("%s moved from %s to %s", username, startPos, endPos);
             return new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, notificationText);
         }
 
