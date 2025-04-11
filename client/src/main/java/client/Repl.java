@@ -56,7 +56,8 @@ public class Repl {
                     }
                     break;
                 case ERROR:
-                    System.out.println("Error: " + serverMessage.getMessage());
+                    String errorMsg = serverMessage.getErrorMessage() != null ? serverMessage.getErrorMessage() : serverMessage.getMessage();
+                    System.out.println("Error: " + (errorMsg != null ? errorMsg : "Unknown error"));
                     break;
                 case NOTIFICATION:
                     System.out.println("Notification: " + serverMessage.getMessage());

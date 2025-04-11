@@ -47,7 +47,7 @@ public class ServerMessage {
     /// New data
     private ChessGame game;
     private String message;
-
+    private String errorMessage;
     public ServerMessage(ServerMessageType type, ChessGame game) {
         this.serverMessageType = type;
         this.game = game;
@@ -56,10 +56,18 @@ public class ServerMessage {
         this.serverMessageType = type;
         this.message = message;
     }
+    public ServerMessage(ServerMessageType type, String errorMessage, boolean isError) {
+        this.serverMessageType = type;
+        this.errorMessage = errorMessage;
+    }
+
     public ChessGame getGame() {
         return game;
     }
     public String getMessage() {
         return message;
+    }
+    public String getErrorMessage() {
+        return errorMessage;
     }
 }

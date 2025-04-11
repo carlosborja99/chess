@@ -44,6 +44,7 @@ public class GameService {
         String gameName = request.gameName;
         int gameID = dataAccess.createGameID(gameName);
         GameData game = new GameData(gameID, null, null, request.gameName(), new ChessGame());
+        dataAccess.updateGame(game);
         return new CreateGameResult(gameID);
     }
 
@@ -133,5 +134,12 @@ public class GameService {
         AuthData authorized = validAuthorization(request.authToken());
         List<GameData> games = dataAccess.listOfGames();
         return new ListGamesResult(games);
+    }
+
+    public void updateGame(GameData game) throws DataAccessException {
+        if (game == null || game.gameID() <= 0) {
+            throw new DataAccessException("Bad Request");
+        }
+        dataAccess.updateGame(game);
     }
 }
