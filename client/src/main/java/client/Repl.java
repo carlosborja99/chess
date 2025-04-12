@@ -71,16 +71,6 @@ public class Repl {
             System.err.println("Unexpected error processing message: " + e.getMessage());
         }
     }
-//    @OnError
-//    public void onError(Session session, Throwable throwable) {
-//        System.err.println("[WebSocket Error] Session ID: " + session.getId() + " Error: " + throwable.getMessage());
-//    }
-//
-//    @OnClose
-//    public void onClose(Session session, CloseReason closeReason) {
-//        System.out.println("[WebSocket Closed] Session ID: " + session.getId() + " Reason: " + closeReason.getReasonPhrase());
-//        websocketSession = null;
-//    }
 
     public void run() {
         System.out.println("♕ Welcome! to 240 Chess. Type help to get started. ♕");
